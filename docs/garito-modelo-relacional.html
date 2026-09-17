@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Garito — Mapa del modelo relacional</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#EDF0EE;
+  --card:#FFFFFF;
+  --ink:#16201D;
+  --ink-soft:#5A6763;
+  --ink-faint:#8A9793;
+  --rule:#C9D2CE;
+  --rule-soft:#DFE5E2;
+  --pk:#1741C4;
+  --pk-bg:#E3E9FB;
+  --fk:#BE2A18;
+  --fk-bg:#FBE6E2;
+  --dom-identidad:#3E7C74;
+  --dom-finanzas:#1741C4;
+  --dom-almacen:#8A6A1F;
+  --dom-proyectos:#6B3E86;
+  --dom-galeria:#A2522E;
+  --arrow:#BE2A18;
+  --arrow-soft:#9AA8A3;
+  --sans:'Archivo',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,'SF Mono',Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --paper:#111614;
+    --card:#191F1D;
+    --ink:#E6ECE9;
+    --ink-soft:#9DABA6;
+    --ink-faint:#6E7C77;
+    --rule:#2E3735;
+    --rule-soft:#232B29;
+    --pk:#8FACFF;
+    --pk-bg:#1B2440;
+    --fk:#FF8F7C;
+    --fk-bg:#3A1F1A;
+    --dom-identidad:#6FB5AA;
+    --dom-finanzas:#8FACFF;
+    --dom-almacen:#D3AC55;
+    --dom-proyectos:#B58CD1;
+    --dom-galeria:#E0916A;
+    --arrow:#FF8F7C;
+    --arrow-soft:#5C6A66;
+  }
+}
+:root[data-theme="dark"]{
+  --paper:#111614;
+  --card:#191F1D;
+  --ink:#E6ECE9;
+  --ink-soft:#9DABA6;
+  --ink-faint:#6E7C77;
+  --rule:#2E3735;
+  --rule-soft:#232B29;
+  --pk:#8FACFF;
+  --pk-bg:#1B2440;
+  --fk:#FF8F7C;
+  --fk-bg:#3A1F1A;
+  --dom-identidad:#6FB5AA;
+  --dom-finanzas:#8FACFF;
+  --dom-almacen:#D3AC55;
+  --dom-proyectos:#B58CD1;
+  --dom-galeria:#E0916A;
+  --arrow:#FF8F7C;
+  --arrow-soft:#5C6A66;
+}
+
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;
+  background:var(--paper);
+  color:var(--ink);
+  font-family:var(--sans);
+  font-size:16px;
+  line-height:1.55;
+}
+.wrap{max-width:1180px;margin:0 auto;padding:0 24px}
+
+/* ---------- cabecera ---------- */
+header{padding:64px 0 40px;border-bottom:1px solid var(--rule)}
+.kicker{
+  font-family:var(--mono);font-size:12px;letter-spacing:.06em;
+  color:var(--ink-faint);margin:0 0 18px;
+}
+h1{
+  font-size:clamp(34px,5.2vw,58px);line-height:1.02;letter-spacing:-.025em;
+  font-weight:700;margin:0 0 20px;max-width:16ch;
+}
+.lede{font-size:18px;color:var(--ink-soft);max-width:62ch;margin:0}
+.meta{
+  display:flex;flex-wrap:wrap;gap:8px 28px;margin-top:28px;
+  font-family:var(--mono);font-size:12.5px;color:var(--ink-faint);
+}
+.meta b{color:var(--ink);font-weight:500}
+
+/* ---------- leyenda ---------- */
+.legend{
+  display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));
+  gap:20px 32px;padding:28px 0 34px;border-bottom:1px solid var(--rule);
+}
+.legend h2{font-size:13px;font-weight:600;margin:0 0 10px;letter-spacing:.01em}
+.legend p{margin:0;font-size:13.5px;color:var(--ink-soft);line-height:1.5}
+.chip{
+  font-family:var(--mono);font-size:11px;font-weight:700;
+  padding:2px 6px;border-radius:3px;white-space:nowrap;
+}
+.chip.pk{color:var(--pk);background:var(--pk-bg)}
+.chip.fk{color:var(--fk);background:var(--fk-bg)}
+
+section{padding:52px 0}
+section + section{border-top:1px solid var(--rule)}
+h2.sec{font-size:26px;letter-spacing:-.015em;margin:0 0 10px;font-weight:600}
+.sec-note{color:var(--ink-soft);max-width:66ch;margin:0 0 30px;font-size:15.5px}
+
+/* ---------- lienzo del diagrama ---------- */
+.canvas-scroll{
+  overflow-x:auto;overflow-y:hidden;
+  border:1px solid var(--rule);border-radius:4px;
+  background:
+    linear-gradient(var(--rule-soft) 1px,transparent 1px) 0 0/100% 32px,
+    var(--card);
+  padding:0;
+}
+.canvas{position:relative;width:2110px;height:1320px}
+.canvas svg{position:absolute;inset:0;width:2110px;height:1320px;pointer-events:none}
+
+/* ---------- caja de tabla ---------- */
+.tbl{
+  position:absolute;width:440px;background:var(--card);
+  border:1px solid var(--rule);border-left:4px solid var(--dom);
+  border-radius:3px;overflow:hidden;
+}
+.tbl > h3{
+  margin:0;padding:9px 12px;font-family:var(--mono);
+  font-size:14px;font-weight:700;letter-spacing:.01em;color:var(--dom);
+  border-bottom:1px solid var(--rule-soft);
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+}
+.tbl > h3 span{
+  font-family:var(--sans);font-size:11px;font-weight:500;
+  color:var(--ink-faint);letter-spacing:0;text-align:right;
+}
+.rows{padding:7px 0}
+.row{
+  display:grid;grid-template-columns:150px 1fr;gap:10px;
+  padding:1px 12px;height:26px;align-items:center;
+}
+.fname{font-family:var(--mono);font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fname.is-pk{color:var(--pk);font-weight:700}
+.fname.is-fk{color:var(--fk);font-weight:500}
+.fdef{font-size:11.5px;color:var(--ink-soft);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fdef code{font-family:var(--mono);font-size:11px;color:var(--ink-soft)}
+.fdef em{font-style:normal;color:var(--ink-faint)}
+.ref{color:var(--fk);font-family:var(--mono);font-size:11px}
+.tfoot{
+  border-top:1px solid var(--rule-soft);padding:9px 12px;
+  font-family:var(--mono);font-size:10.5px;line-height:1.7;color:var(--ink-soft);
+}
+.tfoot b{color:var(--ink);font-weight:700}
+
+/* ---------- hub ---------- */
+.hub-scroll{overflow-x:auto;border:1px solid var(--rule);border-radius:4px;background:var(--card)}
+.hub{display:block;width:940px;height:700px;margin:0 auto}
+
+/* ---------- tabla de relaciones ---------- */
+.rel{width:100%;border-collapse:collapse;font-size:13.5px}
+.rel th{
+  text-align:left;font-size:11.5px;font-weight:600;color:var(--ink-faint);
+  padding:0 14px 9px 0;border-bottom:1px solid var(--rule);
+}
+.rel td{padding:9px 14px 9px 0;border-bottom:1px solid var(--rule-soft);vertical-align:top}
+.rel td:first-child,.rel td:nth-child(2){font-family:var(--mono);font-size:12px;white-space:nowrap}
+.rel td:nth-child(2){color:var(--fk)}
+.rel .cascade{color:var(--ink);font-weight:500}
+.tbl-scroll{overflow-x:auto}
+
+footer{
+  padding:40px 0 70px;border-top:1px solid var(--rule);
+  color:var(--ink-faint);font-size:13.5px;
+}
+footer p{max-width:66ch;margin:0 0 10px}
+
+@media (max-width:760px){
+  header{padding:44px 0 30px}
+  .wrap{padding:0 18px}
+  section{padding:40px 0}
+}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+<header>
+  <p class="kicker">Garito · documento complementario al diseño funcional y técnico</p>
+  <h1>Mapa del modelo relacional</h1>
+  <p class="lede">Las trece tablas del esquema, sus campos con tipo y restricciones, y las claves foráneas que las enlazan. Refleja la sección 5 del documento de diseño, que está cerrada y es vinculante.</p>
+  <div class="meta">
+    <span><b>13</b> tablas</span>
+    <span><b>3</b> vistas derivadas</span>
+    <span><b>24</b> claves foráneas</span>
+    <span>PostgreSQL · Supabase</span>
+  </div>
+</header>
+
+<div class="legend">
+  <div>
+    <h2><span class="chip pk">azul</span>&nbsp; Clave primaria</h2>
+    <p>Identifica la fila de forma única. En <code>proyecto_miembros</code> es compuesta: dos columnas forman juntas la clave.</p>
+  </div>
+  <div>
+    <h2><span class="chip fk">rojo</span>&nbsp; Clave foránea</h2>
+    <p>Apunta a la clave primaria de otra tabla. La base de datos impide que quede apuntando a algo que no existe.</p>
+  </div>
+  <div>
+    <h2>Flechas continuas</h2>
+    <p>Relaciones estructurales: definen de qué depende cada fila para existir. Van del hijo al padre.</p>
+  </div>
+  <div>
+    <h2>Referencias a <code>miembros</code></h2>
+    <p>Doce tablas apuntan a <code>miembros</code> para registrar autoría. Dibujarlas todas aquí lo haría ilegible, así que van marcadas en el campo y resumidas en el diagrama de más abajo.</p>
+  </div>
+</div>
+
+<section>
+  <h2 class="sec">Diagrama de entidades</h2>
+  <p class="sec-note">Agrupado por dominio funcional. Cada columna es una sección de la aplicación; la primera es la identidad, de la que dependen todas las demás. Desplázate lateralmente para ver el ancho completo.</p>
+</section>
+</div>
+
+<div class="wrap">
+<div class="canvas-scroll">
+<div class="canvas">
+
+<svg viewBox="0 0 2110 1320" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--arrow)"/>
+    </marker>
+  </defs>
+  <g fill="none" stroke="var(--arrow)" stroke-width="1.6" marker-end="url(#ah)">
+    <!-- transacciones.lote_id -> operaciones -->
+    <path d="M 800 400 L 800 360"/>
+    <!-- apuntes.transaccion_id -> transacciones -->
+    <path d="M 700 790 L 700 742"/>
+    <!-- apuntes.lote_id -> operaciones (rodeo por la izquierda) -->
+    <path d="M 560 900 L 524 900 L 524 210 L 556 210"/>
+    <!-- apuntes.anula_apunte_id -> apuntes (autorreferencia) -->
+    <path d="M 1000 1010 L 1036 1010 L 1036 966 L 1004 966"/>
+    <!-- stock_log.producto_id -> productos -->
+    <path d="M 1320 380 L 1320 334"/>
+    <!-- proyecto_miembros.proyecto_id -> proyectos -->
+    <path d="M 1840 350 L 1840 308"/>
+    <!-- tareas.proyecto_id -> proyectos -->
+    <path d="M 1600 610 L 1564 610 L 1564 190 L 1596 190"/>
+    <!-- comentarios.proyecto_id -> proyectos -->
+    <path d="M 1600 910 L 1544 910 L 1544 150 L 1596 150"/>
+    <!-- proyectos.proyecto_padre_id -> proyectos (autorreferencia) -->
+    <path d="M 2040 170 L 2076 170 L 2076 126 L 2044 126"/>
+  </g>
+  <g font-family="JetBrains Mono, monospace" font-size="10.5" fill="var(--ink-faint)">
+    <text x="1044" y="994">anida</text>
+    <text x="2084" y="154" text-anchor="end" transform="rotate(-90 2084 154)">anida</text>
+  </g>
+</svg>
+
+<!-- ============ COLUMNA 1 · IDENTIDAD ============ -->
+<div class="tbl" style="--dom:var(--dom-identidad);left:40px;top:70px">
+  <h3>miembros <span>identidad · 25 filas</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">auth_user_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ auth.users</span> · UNIQUE</span></div>
+    <div class="row"><span class="fname">nombre</span><span class="fdef"><code>text</code> NOT NULL · <em>real, para conciliar</em></span></div>
+    <div class="row"><span class="fname">alias</span><span class="fdef"><code>text</code> NOT NULL · <em>lo que se muestra</em></span></div>
+    <div class="row"><span class="fname">email</span><span class="fdef"><code>text</code></span></div>
+    <div class="row"><span class="fname">rol</span><span class="fdef">CHECK <code>admin | miembro</code></span></div>
+    <div class="row"><span class="fname">departamento</span><span class="fdef"><code>text</code> · <em>organigrama, humorístico</em></span></div>
+    <div class="row"><span class="fname">activo</span><span class="fdef"><code>boolean</code> NOT NULL · <em>¿devenga cuota?</em></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code> DEFAULT now()</span></div>
+  </div>
+  <div class="tfoot"><b>Sin IBAN ni dato bancario.</b> Sin fechas de alta/baja.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-identidad);left:40px;top:430px">
+  <h3>alias_bancarios <span>aprendizaje de conciliación</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">miembro_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span> NOT NULL</span></div>
+    <div class="row"><span class="fname">ordenante_normalizado</span><span class="fdef"><code>text</code> UNIQUE NOT NULL</span></div>
+    <div class="row"><span class="fname is-fk">creado_por</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">Un miembro puede tener <b>varios</b> alias. Una cadena, <b>un solo</b> miembro.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-identidad);left:40px;top:690px">
+  <h3>configuracion <span>fila única</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>smallint</code> · CHECK <code>id = 1</code></span></div>
+    <div class="row"><span class="fname">importe_cargo_mensual</span><span class="fdef"><code>numeric(10,2)</code> DEFAULT 20.00</span></div>
+    <div class="row"><span class="fname">dia_devengo</span><span class="fdef"><code>smallint</code> DEFAULT 5 · CHECK 1–28</span></div>
+    <div class="row"><span class="fname is-fk">updated_by</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">updated_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot"><b>1–28, no 1–31:</b> un 29, 30 o 31 rompería febrero en silencio.</div>
+</div>
+
+<!-- ============ COLUMNA 2 · FINANZAS ============ -->
+<div class="tbl" style="--dom:var(--dom-finanzas);left:560px;top:70px">
+  <h3>operaciones <span>lotes reversibles</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname">tipo</span><span class="fdef">CHECK <code>importacion | devengo | saldo_inicial</code></span></div>
+    <div class="row"><span class="fname">periodo</span><span class="fdef"><code>date</code> · <em>solo en devengos</em></span></div>
+    <div class="row"><span class="fname">nombre_archivo</span><span class="fdef"><code>text</code> · <em>solo en importaciones</em></span></div>
+    <div class="row"><span class="fname">estado</span><span class="fdef">CHECK <code>confirmada | anulada</code></span></div>
+    <div class="row"><span class="fname is-fk">ejecutado_por</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">ejecutado_en</span><span class="fdef"><code>timestamptz</code></span></div>
+    <div class="row"><span class="fname is-fk">anulada_por</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span> · NULL</span></div>
+    <div class="row"><span class="fname">anulada_en</span><span class="fdef"><code>timestamptz</code> · NULL</span></div>
+  </div>
+  <div class="tfoot">La unidad que se revierte. Sustituye a la antigua <b>importaciones</b>.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-finanzas);left:560px;top:400px">
+  <h3>transacciones <span>lo que dice el banco, en bruto</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">lote_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ operaciones.id</span> NOT NULL</span></div>
+    <div class="row"><span class="fname">hash_unico</span><span class="fdef"><code>text</code> · UNIQUE parcial · <em>deduplica</em></span></div>
+    <div class="row"><span class="fname">fecha_valor</span><span class="fdef"><code>date</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">importe</span><span class="fdef"><code>numeric(10,2)</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">ordenante</span><span class="fdef"><code>text</code> · <em>tal cual lo escribe el banco</em></span></div>
+    <div class="row"><span class="fname">ordenante_normalizado</span><span class="fdef"><code>text</code> · <em>criterio de cruce</em></span></div>
+    <div class="row"><span class="fname">concepto</span><span class="fdef"><code>text</code></span></div>
+    <div class="row"><span class="fname">datos_originales</span><span class="fdef"><code>jsonb</code> · <em>fila cruda del fichero</em></span></div>
+    <div class="row"><span class="fname is-fk">miembro_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span> · NULL hasta conciliar</span></div>
+    <div class="row"><span class="fname">estado</span><span class="fdef">CHECK <code>conciliada | pendiente | descartada | anulada</code></span></div>
+  </div>
+  <div class="tfoot"><b>UNIQUE (hash_unico) WHERE estado &lt;&gt; 'anulada'</b> — índice parcial: permite reimportar tras revertir.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-finanzas);left:560px;top:790px">
+  <h3>apuntes <span>libro mayor · fuente de verdad</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">miembro_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span> NOT NULL</span></div>
+    <div class="row"><span class="fname">tipo</span><span class="fdef">CHECK <code>cargo | abono | ajuste</code></span></div>
+    <div class="row"><span class="fname">importe</span><span class="fdef"><code>numeric(10,2)</code> · <em>nunca float</em></span></div>
+    <div class="row"><span class="fname">periodo</span><span class="fdef"><code>date</code> día 1 · <em>solo en cargos</em></span></div>
+    <div class="row"><span class="fname is-fk">transaccion_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ transacciones.id</span> · solo abonos</span></div>
+    <div class="row"><span class="fname is-fk">lote_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ operaciones.id</span></span></div>
+    <div class="row"><span class="fname">anulado</span><span class="fdef"><code>boolean</code> DEFAULT false · <em>único mutable</em></span></div>
+    <div class="row"><span class="fname is-fk">anula_apunte_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ apuntes.id</span> · contraapunte</span></div>
+    <div class="row"><span class="fname">concepto</span><span class="fdef"><code>text</code></span></div>
+    <div class="row"><span class="fname is-fk">creado_por</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code> · <em>no confundir con periodo</em></span></div>
+  </div>
+  <div class="tfoot">
+    <b>CHECK</b> tipo='cargo' → importe &lt; 0 · tipo='abono' → importe &gt; 0<br>
+    <b>CHECK</b> (tipo='cargo') = (periodo IS NOT NULL)<br>
+    <b>UNIQUE</b> (miembro_id, periodo) WHERE tipo='cargo' AND anulado=false AND anula_apunte_id IS NULL
+  </div>
+</div>
+
+<!-- ============ COLUMNA 3 · ALMACÉN Y GALERÍA ============ -->
+<div class="tbl" style="--dom:var(--dom-almacen);left:1080px;top:70px">
+  <h3>productos <span>almacén</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname">nombre</span><span class="fdef"><code>text</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">categoria</span><span class="fdef">CHECK <code>bebida | comida | desechables | limpieza | otros</code></span></div>
+    <div class="row"><span class="fname">unidad</span><span class="fdef"><code>text</code> · <em>unidad, litro, kg…</em></span></div>
+    <div class="row"><span class="fname">cantidad_actual</span><span class="fdef"><code>numeric(10,2)</code> · <em>fuente de verdad</em></span></div>
+    <div class="row"><span class="fname">umbral_minimo</span><span class="fdef"><code>numeric(10,2)</code> DEFAULT 0</span></div>
+    <div class="row"><span class="fname">orden</span><span class="fdef"><code>smallint</code> · <em>orden de listado</em></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot"><b>No es dato derivado.</b> No hay movimientos de los que deducirlo.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-almacen);left:1080px;top:380px">
+  <h3>stock_log <span>auditoría · inmutable</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">producto_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ productos.id</span> · ON DELETE CASCADE</span></div>
+    <div class="row"><span class="fname is-fk">miembro_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">cantidad_anterior</span><span class="fdef"><code>numeric(10,2)</code></span></div>
+    <div class="row"><span class="fname">cantidad_nueva</span><span class="fdef"><code>numeric(10,2)</code></span></div>
+    <div class="row"><span class="fname">motivo</span><span class="fdef">CHECK <code>reposicion | consumo | recuento | correccion</code></span></div>
+    <div class="row"><span class="fname">nota</span><span class="fdef"><code>text</code> · opcional</span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">Borrar un producto <b>borra su histórico</b> en cascada. Decisión consciente.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-galeria);left:1080px;top:690px">
+  <h3>fotos <span>galería</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname">album</span><span class="fdef">CHECK <code>merchandising | grupo</code></span></div>
+    <div class="row"><span class="fname">storage_path</span><span class="fdef"><code>text</code> · <em>ruta, nunca una URL</em></span></div>
+    <div class="row"><span class="fname">thumbnail_path</span><span class="fdef"><code>text</code> · miniatura</span></div>
+    <div class="row"><span class="fname">tamano_bytes</span><span class="fdef"><code>integer</code> · <em>vigila el plan gratuito</em></span></div>
+    <div class="row"><span class="fname is-fk">subida_por</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">Las URLs firmadas <b>caducan</b>; la app las genera al mostrar la imagen.</div>
+</div>
+
+<!-- ============ COLUMNA 4 · PROYECTOS ============ -->
+<div class="tbl" style="--dom:var(--dom-proyectos);left:1600px;top:70px">
+  <h3>proyectos <span>máximo 2 niveles</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname">nombre</span><span class="fdef"><code>text</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">descripcion</span><span class="fdef"><code>text</code></span></div>
+    <div class="row"><span class="fname is-fk">proyecto_padre_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ proyectos.id</span> · CASCADE</span></div>
+    <div class="row"><span class="fname is-fk">creador_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">estado</span><span class="fdef">CHECK <code>activo | archivado</code></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">Un proyecto con padre <b>no puede ser padre</b>. Los permisos se heredan hacia abajo.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-proyectos);left:1600px;top:350px">
+  <h3>proyecto_miembros <span>permisos por proyecto</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk is-fk" style="color:var(--pk)">proyecto_id</span><span class="fdef">PK compuesta <span class="ref">→ proyectos.id</span> · CASCADE</span></div>
+    <div class="row"><span class="fname is-pk is-fk" style="color:var(--pk)">miembro_id</span><span class="fdef">PK compuesta <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">permiso</span><span class="fdef">CHECK <code>ver | editar</code></span></div>
+  </div>
+  <div class="tfoot">El <b>creador</b> también tiene su fila con <code>editar</code>: simplifica las políticas RLS.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-proyectos);left:1600px;top:530px">
+  <h3>tareas <span>hereda permisos del proyecto</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">proyecto_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ proyectos.id</span> · CASCADE</span></div>
+    <div class="row"><span class="fname">titulo</span><span class="fdef"><code>text</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">descripcion</span><span class="fdef"><code>text</code> · opcional</span></div>
+    <div class="row"><span class="fname is-fk">responsable_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span> · NULL</span></div>
+    <div class="row"><span class="fname">estado</span><span class="fdef">CHECK <code>pendiente | en_curso | hecha</code></span></div>
+    <div class="row"><span class="fname">orden</span><span class="fdef"><code>smallint</code> · <em>reordenar la lista</em></span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">Sin fecha límite: decisión funcional, no un olvido.</div>
+</div>
+
+<div class="tbl" style="--dom:var(--dom-proyectos);left:1600px;top:840px">
+  <h3>comentarios <span>tablón del proyecto</span></h3>
+  <div class="rows">
+    <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
+    <div class="row"><span class="fname is-fk">proyecto_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ proyectos.id</span> · CASCADE</span></div>
+    <div class="row"><span class="fname is-fk">miembro_id</span><span class="fdef"><code>uuid</code> <span class="ref">→ miembros.id</span></span></div>
+    <div class="row"><span class="fname">texto</span><span class="fdef"><code>text</code> NOT NULL</span></div>
+    <div class="row"><span class="fname">created_at</span><span class="fdef"><code>timestamptz</code></span></div>
+  </div>
+  <div class="tfoot">A nivel de proyecto, <b>no de tarea</b>: evita fragmentar la conversación.</div>
+</div>
+
+</div>
+</div>
+</div>
+
+<div class="wrap">
+<section>
+  <h2 class="sec">Todo converge en <code>miembros</code></h2>
+  <p class="sec-note">Doce de las trece tablas apuntan a <code>miembros</code>, casi siempre para dejar constancia de quién hizo algo. Es la tabla de la que depende el esquema entero: si se corrompe, se corrompe todo. Por eso es la primera que se construye y la que primero recibe políticas de acceso.</p>
+  <div class="hub-scroll">
+  <svg class="hub" viewBox="0 0 940 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama radial: doce tablas apuntan a la tabla miembros">
+    <defs>
+      <marker id="ah2" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+        <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--arrow)"/>
+      </marker>
+    </defs>
+    <g fill="none" stroke="var(--arrow)" stroke-width="1.4" marker-end="url(#ah2)" opacity="0.75">
+      <path d="M 800 350 L 568 350"/>
+      <path d="M 753 475 L 555 391"/>
+      <path d="M 625 567 L 519 416"/>
+      <path d="M 470 600 L 470 420"/>
+      <path d="M 275 567 L 421 416"/>
+      <path d="M 147 475 L 385 391"/>
+      <path d="M 120 350 L 372 350"/>
+      <path d="M 147 225 L 385 309"/>
+      <path d="M 275 133 L 421 284"/>
+      <path d="M 470 100 L 470 280"/>
+      <path d="M 625 133 L 519 284"/>
+      <path d="M 753 225 L 555 309"/>
+    </g>
+
+    <g font-family="JetBrains Mono, monospace" font-size="12" text-anchor="middle" fill="var(--ink-soft)">
+      <text x="860" y="354">fotos</text>
+      <text x="810" y="479">comentarios</text>
+      <text x="660" y="588">tareas</text>
+      <text x="470" y="625">proyecto_miembros</text>
+      <text x="240" y="588">proyectos</text>
+      <text x="100" y="479">stock_log</text>
+      <text x="80" y="354">apuntes</text>
+      <text x="100" y="229">transacciones</text>
+      <text x="240" y="119">operaciones</text>
+      <text x="470" y="86">configuracion</text>
+      <text x="660" y="119">alias_bancarios</text>
+      <text x="810" y="229">auth.users</text>
+    </g>
+
+    <rect x="370" y="310" width="200" height="80" rx="4" fill="var(--card)" stroke="var(--dom-identidad)" stroke-width="2"/>
+    <text x="470" y="345" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="17" font-weight="700" fill="var(--dom-identidad)">miembros</text>
+    <text x="470" y="367" text-anchor="middle" font-family="Archivo, sans-serif" font-size="12" fill="var(--ink-faint)">25 filas · el eje del esquema</text>
+  </svg>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Las veinticuatro claves foráneas</h2>
+  <p class="sec-note">Cada fila es una dependencia real que la base de datos verifica. La columna de borrado dice qué pasa con el hijo cuando desaparece el padre: donde no hay cascada, la base de datos impide borrar el padre mientras existan hijos, que es lo que queremos para todo lo que toca dinero.</p>
+  <div class="tbl-scroll">
+  <table class="rel">
+    <thead><tr><th>Tabla</th><th>Campo</th><th>Apunta a</th><th>Al borrar el padre</th><th>Qué significa</th></tr></thead>
+    <tbody>
+      <tr><td>miembros</td><td>auth_user_id</td><td>auth.users</td><td>—</td><td>Enlaza la ficha con la cuenta de acceso</td></tr>
+      <tr><td>configuracion</td><td>updated_by</td><td>miembros</td><td>—</td><td>Qué admin cambió la cuota o el día de devengo</td></tr>
+      <tr><td>alias_bancarios</td><td>miembro_id</td><td>miembros</td><td>—</td><td>De quién es ese nombre bancario</td></tr>
+      <tr><td>alias_bancarios</td><td>creado_por</td><td>miembros</td><td>—</td><td>Quién enseñó el alias al sistema</td></tr>
+      <tr><td>operaciones</td><td>ejecutado_por</td><td>miembros</td><td>—</td><td>Quién lanzó la importación o el devengo</td></tr>
+      <tr><td>operaciones</td><td>anulada_por</td><td>miembros</td><td>—</td><td>Quién revirtió el lote</td></tr>
+      <tr><td>transacciones</td><td>lote_id</td><td>operaciones</td><td>—</td><td>A qué importación pertenece el movimiento</td></tr>
+      <tr><td>transacciones</td><td>miembro_id</td><td>miembros</td><td>—</td><td>A quién se concilió, o nulo si está pendiente</td></tr>
+      <tr><td>apuntes</td><td>miembro_id</td><td>miembros</td><td>—</td><td>De quién es la cuenta corriente</td></tr>
+      <tr><td>apuntes</td><td>transaccion_id</td><td>transacciones</td><td>—</td><td>Qué ingreso bancario originó el abono</td></tr>
+      <tr><td>apuntes</td><td>lote_id</td><td>operaciones</td><td>—</td><td>Permite revertir el lote entero de golpe</td></tr>
+      <tr><td>apuntes</td><td>anula_apunte_id</td><td>apuntes</td><td>—</td><td>Este apunte es el contraapunte de aquel</td></tr>
+      <tr><td>apuntes</td><td>creado_por</td><td>miembros</td><td>—</td><td>Autoría, sobre todo en ajustes manuales</td></tr>
+      <tr><td>stock_log</td><td>producto_id</td><td>productos</td><td class="cascade">CASCADE</td><td>Al borrar el producto se va su histórico</td></tr>
+      <tr><td>stock_log</td><td>miembro_id</td><td>miembros</td><td>—</td><td>Quién cambió las existencias</td></tr>
+      <tr><td>proyectos</td><td>proyecto_padre_id</td><td>proyectos</td><td class="cascade">CASCADE</td><td>Subproyecto; borrar el padre borra los hijos</td></tr>
+      <tr><td>proyectos</td><td>creador_id</td><td>miembros</td><td>—</td><td>Dueño del proyecto</td></tr>
+      <tr><td>proyecto_miembros</td><td>proyecto_id</td><td>proyectos</td><td class="cascade">CASCADE</td><td>Los permisos mueren con el proyecto</td></tr>
+      <tr><td>proyecto_miembros</td><td>miembro_id</td><td>miembros</td><td>—</td><td>Quién tiene acceso</td></tr>
+      <tr><td>tareas</td><td>proyecto_id</td><td>proyectos</td><td class="cascade">CASCADE</td><td>Una tarea no existe fuera de su proyecto</td></tr>
+      <tr><td>tareas</td><td>responsable_id</td><td>miembros</td><td>—</td><td>A quién se asignó, o nulo</td></tr>
+      <tr><td>comentarios</td><td>proyecto_id</td><td>proyectos</td><td class="cascade">CASCADE</td><td>El tablón muere con el proyecto</td></tr>
+      <tr><td>comentarios</td><td>miembro_id</td><td>miembros</td><td>—</td><td>Autor del comentario</td></tr>
+      <tr><td>fotos</td><td>subida_por</td><td>miembros</td><td>—</td><td>Quién subió la imagen y puede borrarla</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2 class="sec">Lo que no es una tabla</h2>
+  <p class="sec-note">Tres vistas. Una vista es una consulta guardada que se comporta como una tabla pero no almacena nada: se recalcula al consultarla. Es como se evita que un saldo guardado se desincronice de los hechos que lo producen.</p>
+  <div class="tbl-scroll">
+  <table class="rel">
+    <thead><tr><th>Vista</th><th>Sale de</th><th>Qué devuelve</th></tr></thead>
+    <tbody>
+      <tr><td>v_saldo_miembro</td><td>apuntes</td><td>Saldo de cada miembro, meses adeudados o adelantados, y los euros sueltos que sobran de la división</td></tr>
+      <tr><td>v_extracto_miembro</td><td>apuntes</td><td>Apuntes en orden con saldo acumulado, como un extracto bancario</td></tr>
+      <tr><td>v_stock_bajo</td><td>productos</td><td>Productos cuya cantidad está por debajo del umbral</td></tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<footer>
+  <p><b>Aviso sobre el saldo.</b> El cálculo suma todos los apuntes, incluidos los que tienen <code>anulado = true</code>. Filtrarlos dejaría el contraapunte sin su original y el miembro aparecería con dinero a favor que nunca pagó. El flag existe para los índices de unicidad y para atenuar esas líneas en pantalla, nunca para filtrar sumas.</p>
+  <p>Complementa al documento <i>Garito — Diseño funcional y técnico</i>, sección 5. Si el modelo cambia allí, este mapa se actualiza.</p>
+</footer>
+</div>
+
+</body>
+</html>
