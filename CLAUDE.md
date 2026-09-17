@@ -10,6 +10,11 @@ modelo de datos (§5) está **cerrado**: no reinterpretar nombres de campo ni re
 También hay un manual de uso para el tesorero en
 [docs/garitApp-manual-tesorero.md](docs/garitApp-manual-tesorero.md).
 
+**Antes de empezar a trabajar, lee [docs/handoff.md](docs/handoff.md).** Es el documento de
+traspaso entre sesiones: qué se hizo en la última sesión, decisiones tomadas que no estaban
+en el diseño original, gotchas técnicos ya resueltos (para no repetirlos) y qué toca ahora
+en detalle. Se actualiza al cerrar cada sesión de trabajo.
+
 ## Stack
 
 - Next.js (App Router) + React + TypeScript en modo estricto
