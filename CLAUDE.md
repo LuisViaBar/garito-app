@@ -19,8 +19,10 @@ También hay un manual de uso para el tesorero en
 
 ## Estado del proyecto
 
-- **Fase actual: 0** — proyecto Next.js + Tailwind creado localmente. Pendiente: conectar
-  Supabase, subir a GitHub y desplegar en Vercel.
+- **Fase 0: completada.** Proyecto Next.js + Tailwind en GitHub
+  ([LuisViaBar/garito-app](https://github.com/LuisViaBar/garito-app)), desplegado en Vercel
+  ([garito-app.vercel.app](https://garito-app.vercel.app)), con cliente Supabase conectado
+  (`src/lib/supabase/client.ts`). Aún sin tablas ni RLS — eso arranca en la fase 1.
 - Fases siguientes en orden: 1 Auth/miembros/roles, 2 Almacén, 3 Finanzas (apuntes/devengo/saldos),
   4 Finanzas (importación bancaria), 5 Proyectos, 6 Galería, 7 Organigrama, 8 PWA.
   Ver §8 del documento de diseño para el detalle de cada entregable.
