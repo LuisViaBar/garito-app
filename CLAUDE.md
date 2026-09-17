@@ -21,16 +21,26 @@ También hay un manual de uso para el tesorero en
 
 - **Fase 0: completada.** Proyecto Next.js + Tailwind en GitHub
   ([LuisViaBar/garito-app](https://github.com/LuisViaBar/garito-app)), desplegado en Vercel
-  ([garito-app.vercel.app](https://garito-app.vercel.app)), con cliente Supabase conectado
-  (`src/lib/supabase/client.ts`). Aún sin tablas ni RLS — eso arranca en la fase 1.
-- Fases siguientes en orden: 1 Auth/miembros/roles, 2 Almacén, 3 Finanzas (apuntes/devengo/saldos),
+  ([garito-app.vercel.app](https://garito-app.vercel.app)), con cliente Supabase conectado.
+- **Fase 1: completada.** Login por email+contraseña (`@supabase/ssr`, server actions),
+  tabla `miembros` con RLS (`supabase/migrations/20260917120000_miembros.sql`), layout con
+  navegación validado a 375px. Alta de miembros manual vía panel de Supabase, ver
+  [docs/alta-miembros.md](docs/alta-miembros.md). Solo dado de alta el grupo de prueba (~5);
+  los 25 reales quedan para el paso a producción (ver
+  [docs/pendientes-produccion.md](docs/pendientes-produccion.md)).
+- Fases siguientes en orden: 2 Almacén, 3 Finanzas (apuntes/devengo/saldos),
   4 Finanzas (importación bancaria), 5 Proyectos, 6 Galería, 7 Organigrama, 8 PWA.
   Ver §8 del documento de diseño para el detalle de cada entregable.
 
 ## Reglas de proceso (resumen — el detalle está en §7 del documento de diseño)
 
 1. Trabajar fase por fase; no adelantar funcionalidad de fases futuras.
-2. RLS se crea en el mismo paso en que se crea cada tabla, nunca "al final".
+2. RLS se crea en el mismo paso en que se crea cada tabla, nunca "al final". **Incluye
+   siempre el `GRANT` explícito a `authenticated`** (`grant select, insert, update, delete
+   on <tabla> to authenticated;`): crear la tabla por SQL Editor no concede privilegios
+   automáticamente como sí hace el Table Editor, y sin ese GRANT las políticas RLS no llegan
+   a evaluarse (Postgres da "permission denied" antes). Aprendido en la Fase 1, ver
+   [docs/pendientes-produccion.md](docs/pendientes-produccion.md).
 3. Todo cambio de esquema es una migración versionada en `supabase/migrations/`, nunca a mano
    en el panel de Supabase.
 4. Austeridad con dependencias: no instalar una librería para algo resoluble en poco código.
