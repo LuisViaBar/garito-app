@@ -271,11 +271,12 @@ hash_unico = SHA-256(
 
 **Funcionalidad:**
 
-- Listado de productos con categoría (bebida / comida / desechables / limpieza / otros), cantidad actual y umbral mínimo.
+- Listado de productos con categoría (bebida / comida / desechables / limpieza / otros), cantidad actual y umbral mínimo. Sin campo de unidad de medida (se valoró en la Fase 2 y se descartó: no aportaba valor suficiente para justificarlo).
 - **Cualquier miembro puede editar la cantidad** directamente.
-- Cada edición deja **registro de auditoría**: quién, cuándo, valor anterior, valor nuevo, nota opcional.
-- **Indicador visual de umbral:** verde si está por encima del mínimo, rojo si está por debajo. Resumen arriba del tipo "3 productos bajo mínimos".
+- Cada edición deja **registro de auditoría**: quién, cuándo, valor anterior, valor nuevo, nota opcional. Es consultable por cualquier miembro desde el propio listado ("Ver historial" en cada producto, últimas 20 entradas).
+- **Indicador visual de umbral:** verde si está por encima del mínimo, rojo si está por debajo. Resumen arriba del tipo "3 productos bajo mínimos". Los productos bajo mínimo se muestran primero en el listado.
 - Solo **admin** puede crear/eliminar productos y fijar umbrales.
+- **Aviso de posible duplicado al crear o renombrar un producto:** se compara el nombre (sin mayúsculas, sin acentos, ignorando una "s" final) contra los productos existentes; si hay uno parecido, se pide confirmación antes de guardar, citando con qué producto podría coincidir. Es un aviso, no un bloqueo: se puede confirmar y crear igualmente si de verdad son productos distintos (p. ej. "Vasos" de cristal y "Vaso" de plástico).
 
 **Nota de evolución:** el umbral se implementa de forma que en el futuro pueda disparar una notificación (push o mensaje al grupo) sin rehacer nada. En v1 solo es visual.
 
@@ -436,13 +437,18 @@ transacciones           -- reflejo en bruto de lo que dice el banco
 productos
   id, nombre,
   categoria CHECK (categoria IN ('bebida','comida','desechables','limpieza','otros')),
-  unidad text,                          -- 'unidad', 'litro', 'kg', 'paquete'...
   cantidad_actual numeric(10,2) NOT NULL DEFAULT 0,
   umbral_minimo  numeric(10,2) NOT NULL DEFAULT 0,
   orden smallint,                       -- control del orden de listado
   created_at
   -- cantidad_actual es FUENTE DE VERDAD, no dato derivado (ver §4.2)
   -- decimal, no entero: cubre unidades contables y magnitudes continuas (1,5 L)
+  -- cantidad_actual solo se actualiza vía la función actualizar_stock() (RPC,
+  --   SECURITY DEFINER): en la misma sentencia actualiza el producto e
+  --   inserta el stock_log, así el histórico nunca puede desincronizarse
+  --   del valor real. La política RLS de UPDATE de la tabla es solo-admin
+  --   (nombre/categoria/umbral_minimo/orden); la función es el único camino
+  --   para que cualquier miembro cambie la cantidad.
 
 stock_log               -- auditoría de cambios de existencias. INMUTABLE
   id, producto_id -> productos.id ON DELETE CASCADE,

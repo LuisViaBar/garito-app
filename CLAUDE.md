@@ -33,7 +33,13 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
   [docs/alta-miembros.md](docs/alta-miembros.md). Solo dado de alta el grupo de prueba (~5);
   los 25 reales quedan para el paso a producción (ver
   [docs/pendientes-produccion.md](docs/pendientes-produccion.md)).
-- Fases siguientes en orden: 2 Almacén, 3 Finanzas (apuntes/devengo/saldos),
+- **Fase 2: completada.** Almacén: tablas `productos` y `stock_log` con RLS
+  (`supabase/migrations/20260918*.sql`), función `actualizar_stock()` (RPC, SECURITY DEFINER)
+  para que cualquier miembro cambie la cantidad dejando registro en `stock_log` de forma
+  atómica, vista `v_stock_bajo`, listado con indicador verde/rojo y resumen, alta/edición/
+  borrado de productos solo admin, aviso de posible duplicado por mayúsculas/plural al
+  crear o renombrar, e historial de cambios consultable por cualquier miembro.
+- Fases siguientes en orden: 3 Finanzas (apuntes/devengo/saldos),
   4 Finanzas (importación bancaria), 5 Proyectos, 6 Galería, 7 Organigrama, 8 PWA.
   Ver §8 del documento de diseño para el detalle de cada entregable.
 
@@ -44,7 +50,10 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
    siempre el `GRANT` explícito a `authenticated`** (`grant select, insert, update, delete
    on <tabla> to authenticated;`): crear la tabla por SQL Editor no concede privilegios
    automáticamente como sí hace el Table Editor, y sin ese GRANT las políticas RLS no llegan
-   a evaluarse (Postgres da "permission denied" antes). Aprendido en la Fase 1, ver
+   a evaluarse (Postgres da "permission denied" antes). **Esto también aplica a las vistas**
+   (`grant select on <vista> to authenticated;`): se repitió el mismo error en la Fase 2 con
+   `v_stock_bajo` y el fallo fue silencioso (la app trataba la consulta fallida como "sin
+   resultados" en vez de mostrar el error). Aprendido en la Fase 1, repetido en la Fase 2, ver
    [docs/pendientes-produccion.md](docs/pendientes-produccion.md).
 3. Todo cambio de esquema es una migración versionada en `supabase/migrations/`, nunca a mano
    en el panel de Supabase.

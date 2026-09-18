@@ -59,3 +59,17 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
   Postgres devuelve `permission denied for table` antes de mirar las políticas. Toda migración
   nueva debe incluir el `GRANT` explícito junto con `ENABLE ROW LEVEL SECURITY` y sus políticas,
   en el mismo paso.
+
+### Fase 2 — Almacén
+- Completada: tablas `productos` y `stock_log` con RLS, función `actualizar_stock()` (RPC,
+  SECURITY DEFINER) que actualiza la cantidad e inserta el `stock_log` en una sola sentencia
+  atómica, vista `v_stock_bajo`, listado con indicador verde/rojo (los productos bajo mínimo
+  suben arriba), alta/edición/borrado de producto solo admin, aviso de posible duplicado por
+  mayúsculas/plural al crear o renombrar, e historial de cambios visible por cualquier miembro.
+- Se descartó el campo `unidad` de `productos` (decisión tomada en esta fase, ver §4.2 y §5).
+- **La misma lección de la Fase 1 se repitió con una vista:** `v_stock_bajo` tampoco tenía
+  `GRANT` explícito. La diferencia con una tabla es que el fallo fue **silencioso** — el error
+  de PostgREST no se comprobaba en el código, así que la app interpretó "0 filas por permission
+  denied" como "ningún producto bajo mínimo", y todos los productos aparecían en verde aunque
+  no lo estuvieran. Doble lección: el `GRANT` aplica también a vistas, y **toda consulta debe
+  comprobar su `error`**, aunque sea de solo lectura, para que un fallo así no quede oculto.
