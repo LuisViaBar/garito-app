@@ -39,6 +39,11 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
   atómica, vista `v_stock_bajo`, listado con indicador verde/rojo y resumen, alta/edición/
   borrado de productos solo admin, aviso de posible duplicado por mayúsculas/plural al
   crear o renombrar, e historial de cambios consultable por cualquier miembro.
+- **Sistema de diseño: implementado** (2026-09-19), previo a la Fase 3. Tokens en
+  `src/app/globals.css`, componentes en `src/components/ui/` (ver su README), navegación
+  con `AppBar` + `SideDrawer`, Almacén rehecho con ellos. Especificación en
+  [docs/garito-sistema-diseno.md](docs/garito-sistema-diseno.md); el acabado visual
+  (ilustraciones, microcopy) va al final, en [docs/garito-acabado-visual.md](docs/garito-acabado-visual.md).
 - Fases siguientes en orden: 3 Finanzas (apuntes/devengo/saldos),
   4 Finanzas (importación bancaria), 5 Proyectos, 6 Galería, 7 Organigrama, 8 PWA.
   Ver §8 del documento de diseño para el detalle de cada entregable.
@@ -67,6 +72,8 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
 
 - Los colores, tipografías, espaciados y radios están definidos en `tailwind.config`
   y en las variables CSS de `globals.css`. USAR SIEMPRE LOS TOKENS.
+  (Tailwind v4 no tiene `tailwind.config`: los tokens son el bloque `@theme` de `globals.css`,
+  que además elimina las clases crudas, así que `text-gray-500` simplemente no compila.)
   Prohibido `text-gray-500`, `bg-red-600`, `rounded-xl` arbitrarios o valores en px sueltos.
 - Antes de crear un componente nuevo, comprobar si existe en `components/ui/`.
   Si existe, se usa. Si hace falta uno nuevo, se añade ahí y se documenta.

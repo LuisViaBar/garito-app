@@ -1,7 +1,11 @@
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+
 export default function FinanzasPage() {
   return (
-    <main className="flex-1 flex items-center justify-center p-6 text-center text-sm text-gray-500">
-      Finanzas — próximamente (Fase 3).
-    </main>
+    <>
+      <PageHeader title="Finanzas" />
+      <EmptyState>Próximamente.</EmptyState>
+    </>
   );
 }

@@ -1,6 +1,20 @@
 "use client";
 
-import { useActionState, useEffect, useRef, useState } from "react";
+import { Check, Plus, TriangleAlert } from "lucide-react";
+import {
+  startTransition,
+  useActionState,
+  useEffect,
+  useState,
+  type FormEvent,
+} from "react";
+import { ConfirmSheet } from "@/components/ui/bottom-sheet";
+import { ButtonPrimary, ButtonSecondary } from "@/components/ui/buttons";
+import { EmptyState } from "@/components/ui/empty-state";
+import { Field, FormError, Input, Select } from "@/components/ui/field";
+import { CardList, ListCard } from "@/components/ui/list-card";
+import { SummaryPill } from "@/components/ui/summary-pill";
+import { formatCantidad } from "@/lib/format";
 import type { Categoria, Motivo, Producto } from "@/lib/types";
 import {
   actualizarCantidad,
@@ -56,6 +70,10 @@ function encontrarParecido(
   );
 }
 
+// Panel desplegado dentro de una tarjeta. Solo hay uno abierto a la vez en
+// toda la lista, así en pantalla nunca compiten dos formularios.
+type Panel = { id: string; tipo: "cantidad" | "historial" | "editar" };
+
 export function ListaProductos({
   productos,
   bajosIds,
@@ -65,138 +83,188 @@ export function ListaProductos({
   bajosIds: Set<string>;
   esAdmin: boolean;
 }) {
-  const [expandido, setExpandido] = useState<string | null>(null);
-  const [modoAdmin, setModoAdmin] = useState<string | null>(null);
+  const [panel, setPanel] = useState<Panel | null>(null);
   const [mostrarNuevo, setMostrarNuevo] = useState(false);
+  const [soloBajos, setSoloBajos] = useState(false);
+
+  const alternar = (id: string, tipo: Panel["tipo"]) =>
+    setPanel((actual) =>
+      actual?.id === id && actual.tipo === tipo ? null : { id, tipo },
+    );
+
+  const filtrando = soloBajos && bajosIds.size > 0;
 
   // Los productos bajo mínimo suben arriba de la lista; a igualdad de
   // estado se conserva el orden recibido (orden manual, luego nombre).
-  const productosOrdenados = [...productos].sort((a, b) => {
-    const bajoA = bajosIds.has(a.id) ? 0 : 1;
-    const bajoB = bajosIds.has(b.id) ? 0 : 1;
-    return bajoA - bajoB;
-  });
+  const visibles = [...productos]
+    .sort((a, b) => (bajosIds.has(a.id) ? 0 : 1) - (bajosIds.has(b.id) ? 0 : 1))
+    .filter((p) => !filtrando || bajosIds.has(p.id));
+
+  const botonNuevo = (
+    <ButtonPrimary
+      icon={<Plus size={20} strokeWidth={1.75} aria-hidden />}
+      onClick={() => {
+        setPanel(null);
+        setMostrarNuevo(true);
+      }}
+    >
+      Nuevo producto
+    </ButtonPrimary>
+  );
 
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div
-        className={`rounded border px-3 py-2 text-sm ${
-          bajosIds.size > 0
-            ? "border-red-200 bg-red-50 text-red-700"
-            : "border-green-200 bg-green-50 text-green-700"
-        }`}
+    <div className="flex flex-col gap-6">
+      <SummaryPill
+        count={bajosIds.size}
+        icon={
+          bajosIds.size > 0 ? (
+            <TriangleAlert size={20} strokeWidth={1.75} aria-hidden />
+          ) : (
+            <Check size={20} strokeWidth={1.75} aria-hidden />
+          )
+        }
+        pressed={filtrando}
+        onClick={() => setSoloBajos((v) => !v)}
       >
         {bajosIds.size > 0
           ? `${bajosIds.size} producto${bajosIds.size === 1 ? "" : "s"} bajo mínimos`
           : "Todo por encima de mínimos"}
-      </div>
+      </SummaryPill>
 
-      {esAdmin && (
-        <div>
-          <button
-            type="button"
-            onClick={() => setMostrarNuevo((v) => !v)}
-            className="rounded bg-gray-900 px-3 py-2 text-sm text-white"
-          >
-            {mostrarNuevo ? "Cancelar" : "+ Nuevo producto"}
-          </button>
-          {mostrarNuevo && (
-            <div className="mt-2 rounded border border-gray-200 p-3">
-              <NuevoProductoForm
-                productos={productos}
-                onDone={() => setMostrarNuevo(false)}
-              />
-            </div>
-          )}
-        </div>
+      {esAdmin && mostrarNuevo && (
+        <NuevoProductoForm
+          productos={productos}
+          onDone={() => setMostrarNuevo(false)}
+        />
+      )}
+
+      {esAdmin && !mostrarNuevo && productos.length > 0 && (
+        <div>{botonNuevo}</div>
       )}
 
       {productos.length === 0 ? (
-        <p className="text-center text-sm text-gray-500">
-          No hay productos todavía.
-        </p>
+        <EmptyState
+          action={esAdmin && !mostrarNuevo ? botonNuevo : undefined}
+        >
+          Todavía no hay productos en el almacén.
+        </EmptyState>
       ) : (
-        <ul className="flex flex-col gap-2">
-          {productosOrdenados.map((producto) => {
+        <CardList>
+          {visibles.map((producto) => {
             const bajo = bajosIds.has(producto.id);
+            const abierto = panel?.id === producto.id ? panel.tipo : null;
             return (
-              <li
-                key={producto.id}
-                className="rounded border border-gray-200 p-3"
-              >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                        bajo ? "bg-red-500" : "bg-green-500"
-                      }`}
-                      aria-hidden
-                    />
-                    <div className="min-w-0">
-                      <p className="truncate font-medium">{producto.nombre}</p>
-                      <p className="text-xs text-gray-500">
-                        {CATEGORIA_LABEL[producto.categoria]}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-medium">{producto.cantidad_actual}</p>
-                    <p className="text-xs text-gray-400">
-                      mín. {producto.umbral_minimo}
-                    </p>
-                  </div>
-                </div>
-
-                <div className="mt-2 flex gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setExpandido((v) => (v === producto.id ? null : producto.id))
-                    }
-                    className="text-sm text-gray-700 underline"
-                  >
-                    {expandido === producto.id ? "Cerrar" : "Editar cantidad"}
-                  </button>
-                  <HistorialToggle productoId={producto.id} />
-                </div>
-
-                {expandido === producto.id && (
-                  <div className="mt-2">
-                    <EditarCantidadForm
-                      producto={producto}
-                      onDone={() => setExpandido(null)}
-                    />
-                  </div>
-                )}
-
-                {esAdmin && (
-                  <div className="mt-2 border-t border-gray-100 pt-2">
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setModoAdmin((v) => (v === producto.id ? null : producto.id))
-                      }
-                      className="text-sm text-gray-500 underline"
-                    >
-                      {modoAdmin === producto.id ? "Cerrar admin" : "Admin"}
-                    </button>
-
-                    {modoAdmin === producto.id && (
-                      <div className="mt-2 flex flex-col gap-3">
+              <li key={producto.id}>
+                <ListCard
+                  status={bajo ? "alert" : "ok"}
+                  statusLabel={bajo ? "Bajo mínimo" : "Por encima del mínimo"}
+                  title={producto.nombre}
+                  meta={CATEGORIA_LABEL[producto.categoria]}
+                  value={formatCantidad(producto.cantidad_actual)}
+                  valueNote={`mín. ${formatCantidad(producto.umbral_minimo)}`}
+                  actions={
+                    <>
+                      <ButtonSecondary
+                        aria-expanded={abierto === "cantidad"}
+                        onClick={() => alternar(producto.id, "cantidad")}
+                      >
+                        Editar cantidad
+                      </ButtonSecondary>
+                      <ButtonSecondary
+                        aria-expanded={abierto === "historial"}
+                        onClick={() => alternar(producto.id, "historial")}
+                      >
+                        Ver historial
+                      </ButtonSecondary>
+                      {esAdmin && (
+                        <div className="col-span-2">
+                          <ButtonSecondary
+                            fullWidth
+                            aria-expanded={abierto === "editar"}
+                            onClick={() => alternar(producto.id, "editar")}
+                          >
+                            Editar producto
+                          </ButtonSecondary>
+                        </div>
+                      )}
+                    </>
+                  }
+                  panel={
+                    abierto === "cantidad" ? (
+                      <EditarCantidadForm
+                        producto={producto}
+                        onDone={() => setPanel(null)}
+                      />
+                    ) : abierto === "historial" ? (
+                      <HistorialPanel productoId={producto.id} />
+                    ) : abierto === "editar" ? (
+                      <div className="flex flex-col gap-5">
                         <EditarProductoForm
                           producto={producto}
                           productos={productos}
+                          onDone={() => setPanel(null)}
                         />
-                        <EliminarProductoForm producto={producto} />
+                        <div className="border-t border-line-soft pt-5">
+                          <EliminarProductoForm producto={producto} />
+                        </div>
                       </div>
-                    )}
-                  </div>
-                )}
+                    ) : undefined
+                  }
+                />
               </li>
             );
           })}
-        </ul>
+        </CardList>
       )}
+    </div>
+  );
+}
+
+// Envío de formulario con confirmación en hoja inferior. Si hay aviso, se
+// frena el envío y se guarda el FormData; al confirmar se despacha la acción
+// con esos mismos datos.
+function useEnvioConfirmado(formAction: (datos: FormData) => void) {
+  const [pendiente, setPendiente] = useState<{
+    mensaje: string;
+    datos: FormData;
+  } | null>(null);
+
+  return {
+    aviso: pendiente?.mensaje ?? null,
+    antesDeEnviar(e: FormEvent<HTMLFormElement>, mensaje: string | null) {
+      if (!mensaje) return;
+      e.preventDefault();
+      setPendiente({ mensaje, datos: new FormData(e.currentTarget) });
+    },
+    confirmar() {
+      if (!pendiente) return;
+      const { datos } = pendiente;
+      setPendiente(null);
+      startTransition(() => formAction(datos));
+    },
+    cancelar() {
+      setPendiente(null);
+    },
+  };
+}
+
+function AccionesFormulario({
+  pending,
+  enviar,
+  enviando,
+  onCancel,
+}: {
+  pending: boolean;
+  enviar: string;
+  enviando: string;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <ButtonSecondary onClick={onCancel}>Cancelar</ButtonSecondary>
+      <ButtonPrimary type="submit" disabled={pending}>
+        {pending ? enviando : enviar}
+      </ButtonPrimary>
     </div>
   );
 }
@@ -221,30 +289,23 @@ function EditarCantidadForm({
   }, [state]);
 
   return (
-    <form action={formAction} className="flex flex-col gap-2">
+    <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="producto_id" value={producto.id} />
 
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Cantidad nueva
-        <input
+      <Field label="Cantidad nueva">
+        <Input
           type="number"
           name="cantidad_nueva"
+          inputMode="decimal"
           step="0.01"
           min={0}
           required
           defaultValue={producto.cantidad_actual}
-          className="rounded border border-gray-300 px-3 py-2"
         />
-      </label>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Motivo
-        <select
-          name="motivo"
-          required
-          defaultValue=""
-          className="rounded border border-gray-300 px-3 py-2"
-        >
+      <Field label="Motivo">
+        <Select name="motivo" required defaultValue="">
           <option value="" disabled>
             Elige un motivo
           </option>
@@ -253,27 +314,21 @@ function EditarCantidadForm({
               {MOTIVO_LABEL[motivo]}
             </option>
           ))}
-        </select>
-      </label>
+        </Select>
+      </Field>
 
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Nota (opcional)
-        <input
-          type="text"
-          name="nota"
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
+      <Field label="Nota (opcional)">
+        <Input type="text" name="nota" />
+      </Field>
 
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
+      <FormError>{state.error}</FormError>
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-gray-900 px-3 py-2 text-sm text-white disabled:opacity-50"
-      >
-        {pending ? "Guardando…" : "Guardar"}
-      </button>
+      <AccionesFormulario
+        pending={pending}
+        enviar="Guardar"
+        enviando="Guardando…"
+        onCancel={onDone}
+      />
     </form>
   );
 }
@@ -281,93 +336,103 @@ function EditarCantidadForm({
 function EditarProductoForm({
   producto,
   productos,
+  onDone,
 }: {
   producto: Producto;
   productos: Producto[];
+  onDone: () => void;
 }) {
   const [state, formAction, pending] = useActionState(
     editarProducto,
     initialState,
   );
+  const envio = useEnvioConfirmado(formAction);
+
+  useEffect(() => {
+    if (state !== initialState && !state.error) {
+      onDone();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state]);
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-2"
-      onSubmit={(e) => {
-        const nombre = new FormData(e.currentTarget).get("nombre") as string;
-        const parecido = encontrarParecido(nombre, productos, producto.id);
-        if (parecido) {
-          const ok = window.confirm(
-            `Ya existe un producto parecido: "${parecido.nombre}". ¿Seguro que quieres renombrar "${producto.nombre}" a "${nombre}"?`,
+    <>
+      <form
+        action={formAction}
+        className="flex flex-col gap-4"
+        onSubmit={(e) => {
+          const nombre = new FormData(e.currentTarget).get("nombre") as string;
+          const parecido = encontrarParecido(nombre, productos, producto.id);
+          envio.antesDeEnviar(
+            e,
+            parecido
+              ? `Ya existe un producto parecido: "${parecido.nombre}". ¿Seguro que quieres renombrar "${producto.nombre}" a "${nombre}"?`
+              : null,
           );
-          if (!ok) e.preventDefault();
-        }
-      }}
-    >
-      <input type="hidden" name="producto_id" value={producto.id} />
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Nombre
-        <input
-          type="text"
-          name="nombre"
-          required
-          defaultValue={producto.nombre}
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Categoría
-        <select
-          name="categoria"
-          required
-          defaultValue={producto.categoria}
-          className="rounded border border-gray-300 px-3 py-2"
-        >
-          {CATEGORIAS.map((categoria) => (
-            <option key={categoria} value={categoria}>
-              {CATEGORIA_LABEL[categoria]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Umbral mínimo
-        <input
-          type="number"
-          name="umbral_minimo"
-          step="0.01"
-          min={0}
-          required
-          defaultValue={producto.umbral_minimo}
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Orden (opcional)
-        <input
-          type="number"
-          name="orden"
-          step="1"
-          defaultValue={producto.orden ?? undefined}
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded border border-gray-300 px-3 py-2 text-sm disabled:opacity-50"
+        }}
       >
-        {pending ? "Guardando…" : "Guardar cambios"}
-      </button>
-    </form>
+        <input type="hidden" name="producto_id" value={producto.id} />
+
+        <Field label="Nombre">
+          <Input
+            type="text"
+            name="nombre"
+            required
+            defaultValue={producto.nombre}
+          />
+        </Field>
+
+        <Field label="Categoría">
+          <Select name="categoria" required defaultValue={producto.categoria}>
+            {CATEGORIAS.map((categoria) => (
+              <option key={categoria} value={categoria}>
+                {CATEGORIA_LABEL[categoria]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Umbral mínimo">
+          <Input
+            type="number"
+            name="umbral_minimo"
+            inputMode="decimal"
+            step="0.01"
+            min={0}
+            required
+            defaultValue={producto.umbral_minimo}
+          />
+        </Field>
+
+        <Field label="Orden (opcional)">
+          <Input
+            type="number"
+            name="orden"
+            inputMode="numeric"
+            step="1"
+            defaultValue={producto.orden ?? undefined}
+          />
+        </Field>
+
+        <FormError>{state.error}</FormError>
+
+        <AccionesFormulario
+          pending={pending}
+          enviar="Guardar cambios"
+          enviando="Guardando…"
+          onCancel={onDone}
+        />
+      </form>
+
+      <ConfirmSheet
+        open={envio.aviso !== null}
+        title="¿Producto duplicado?"
+        message={envio.aviso ?? ""}
+        confirmLabel="Renombrar igualmente"
+        onConfirm={envio.confirmar}
+        onCancel={envio.cancelar}
+      />
+    </>
   );
 }
 
@@ -376,29 +441,35 @@ function EliminarProductoForm({ producto }: { producto: Producto }) {
     eliminarProducto,
     initialState,
   );
-  const formRef = useRef<HTMLFormElement>(null);
+  const [confirmando, setConfirmando] = useState(false);
 
   return (
-    <form
-      ref={formRef}
-      action={formAction}
-      onSubmit={(e) => {
-        const ok = window.confirm(
-          `¿Borrar "${producto.nombre}"? Se perderá también su histórico de existencias y no se puede deshacer.`,
-        );
-        if (!ok) e.preventDefault();
-      }}
-    >
-      <input type="hidden" name="producto_id" value={producto.id} />
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded border border-red-300 px-3 py-2 text-sm text-red-700 disabled:opacity-50"
-      >
-        {pending ? "Borrando…" : "Eliminar producto"}
-      </button>
-    </form>
+    <div className="flex flex-col gap-4">
+      <FormError>{state.error}</FormError>
+      <div>
+        <ButtonSecondary
+          tone="danger"
+          disabled={pending}
+          onClick={() => setConfirmando(true)}
+        >
+          {pending ? "Borrando…" : "Eliminar producto"}
+        </ButtonSecondary>
+      </div>
+
+      <ConfirmSheet
+        open={confirmando}
+        title={`¿Borrar "${producto.nombre}"?`}
+        message="Se perderá también su histórico de existencias y no se puede deshacer."
+        confirmLabel="Borrar producto"
+        onConfirm={() => {
+          setConfirmando(false);
+          const datos = new FormData();
+          datos.set("producto_id", producto.id);
+          startTransition(() => formAction(datos));
+        }}
+        onCancel={() => setConfirmando(false)}
+      />
+    </div>
   );
 }
 
@@ -413,6 +484,7 @@ function NuevoProductoForm({
     crearProducto,
     initialState,
   );
+  const envio = useEnvioConfirmado(formAction);
 
   useEffect(() => {
     if (state !== initialState && !state.error) {
@@ -422,136 +494,139 @@ function NuevoProductoForm({
   }, [state]);
 
   return (
-    <form
-      action={formAction}
-      className="flex flex-col gap-2"
-      onSubmit={(e) => {
-        const nombre = new FormData(e.currentTarget).get("nombre") as string;
-        const parecido = encontrarParecido(nombre, productos);
-        if (parecido) {
-          const ok = window.confirm(
-            `Ya existe un producto parecido: "${parecido.nombre}". ¿Seguro que quieres crear "${nombre}" como uno nuevo?`,
+    <>
+      <form
+        action={formAction}
+        className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4 shadow-card"
+        onSubmit={(e) => {
+          const nombre = new FormData(e.currentTarget).get("nombre") as string;
+          const parecido = encontrarParecido(nombre, productos);
+          envio.antesDeEnviar(
+            e,
+            parecido
+              ? `Ya existe un producto parecido: "${parecido.nombre}". ¿Seguro que quieres crear "${nombre}" como uno nuevo?`
+              : null,
           );
-          if (!ok) e.preventDefault();
-        }
-      }}
-    >
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Nombre
-        <input
-          type="text"
-          name="nombre"
-          required
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Categoría
-        <select
-          name="categoria"
-          required
-          defaultValue=""
-          className="rounded border border-gray-300 px-3 py-2"
-        >
-          <option value="" disabled>
-            Elige una categoría
-          </option>
-          {CATEGORIAS.map((categoria) => (
-            <option key={categoria} value={categoria}>
-              {CATEGORIA_LABEL[categoria]}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Cantidad inicial
-        <input
-          type="number"
-          name="cantidad_actual"
-          step="0.01"
-          min={0}
-          defaultValue={0}
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Umbral mínimo
-        <input
-          type="number"
-          name="umbral_minimo"
-          step="0.01"
-          min={0}
-          defaultValue={0}
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      <label className="flex flex-col gap-1 text-sm text-gray-600">
-        Orden (opcional)
-        <input
-          type="number"
-          name="orden"
-          step="1"
-          className="rounded border border-gray-300 px-3 py-2"
-        />
-      </label>
-
-      {state.error && <p className="text-sm text-red-600">{state.error}</p>}
-
-      <button
-        type="submit"
-        disabled={pending}
-        className="rounded bg-gray-900 px-3 py-2 text-sm text-white disabled:opacity-50"
+        }}
       >
-        {pending ? "Creando…" : "Crear producto"}
-      </button>
-    </form>
+        <h2 className="text-screen font-bold">Nuevo producto</h2>
+
+        <Field label="Nombre">
+          <Input type="text" name="nombre" required />
+        </Field>
+
+        <Field label="Categoría">
+          <Select name="categoria" required defaultValue="">
+            <option value="" disabled>
+              Elige una categoría
+            </option>
+            {CATEGORIAS.map((categoria) => (
+              <option key={categoria} value={categoria}>
+                {CATEGORIA_LABEL[categoria]}
+              </option>
+            ))}
+          </Select>
+        </Field>
+
+        <Field label="Cantidad inicial">
+          <Input
+            type="number"
+            name="cantidad_actual"
+            inputMode="decimal"
+            step="0.01"
+            min={0}
+            defaultValue={0}
+          />
+        </Field>
+
+        <Field label="Umbral mínimo">
+          <Input
+            type="number"
+            name="umbral_minimo"
+            inputMode="decimal"
+            step="0.01"
+            min={0}
+            defaultValue={0}
+          />
+        </Field>
+
+        <Field label="Orden (opcional)">
+          <Input
+            type="number"
+            name="orden"
+            inputMode="numeric"
+            step="1"
+          />
+        </Field>
+
+        <FormError>{state.error}</FormError>
+
+        <AccionesFormulario
+          pending={pending}
+          enviar="Crear producto"
+          enviando="Creando…"
+          onCancel={onDone}
+        />
+      </form>
+
+      <ConfirmSheet
+        open={envio.aviso !== null}
+        title="¿Producto duplicado?"
+        message={envio.aviso ?? ""}
+        confirmLabel="Crear igualmente"
+        onConfirm={envio.confirmar}
+        onCancel={envio.cancelar}
+      />
+    </>
   );
 }
 
-function HistorialToggle({ productoId }: { productoId: string }) {
+function HistorialPanel({ productoId }: { productoId: string }) {
   const [state, formAction, pending] = useActionState(
     obtenerHistorial,
     initialHistorialState,
   );
-  const [abierto, setAbierto] = useState(false);
+
+  // El panel se monta al pulsar "Ver historial": se pide entonces, y cada
+  // apertura trae datos frescos.
+  useEffect(() => {
+    const datos = new FormData();
+    datos.set("producto_id", productoId);
+    startTransition(() => formAction(datos));
+  }, [productoId, formAction]);
+
+  if (state.error) return <FormError>{state.error}</FormError>;
+
+  if (pending || state.entradas === null) {
+    return <p className="text-meta text-ink-2">Cargando…</p>;
+  }
+
+  if (state.entradas.length === 0) {
+    return <p className="text-meta text-ink-2">Sin cambios registrados.</p>;
+  }
 
   return (
-    <div>
-      <form action={formAction}>
-        <input type="hidden" name="producto_id" value={productoId} />
-        <button
-          type="submit"
-          onClick={(e) => {
-            if (abierto) {
-              e.preventDefault();
-            }
-            setAbierto((v) => !v);
-          }}
-          className="text-sm text-gray-500 underline"
-        >
-          {abierto ? "Ocultar historial" : "Ver historial"}
-        </button>
-      </form>
-
-      {abierto && (
-        <div className="mt-2 flex flex-col gap-1 text-xs text-gray-600">
-          {pending && <p>Cargando…</p>}
-          {state.error && <p className="text-red-600">{state.error}</p>}
-          {state.entradas?.length === 0 && <p>Sin cambios registrados.</p>}
-          {state.entradas?.map((entrada) => (
-            <p key={entrada.id}>
-              {new Date(entrada.created_at).toLocaleString("es-ES")} ·{" "}
-              {entrada.alias} · {MOTIVO_LABEL[entrada.motivo]}:{" "}
-              {entrada.cantidad_anterior} → {entrada.cantidad_nueva}
-              {entrada.nota ? ` (${entrada.nota})` : ""}
-            </p>
-          ))}
-        </div>
-      )}
-    </div>
+    <ul className="flex flex-col divide-y divide-line-soft">
+      {state.entradas.map((entrada) => (
+        <li key={entrada.id} className="flex flex-col gap-1 py-2 first:pt-0 last:pb-0">
+          <p className="flex items-baseline justify-between gap-3 text-label">
+            <span className="min-w-0 truncate font-medium">
+              {entrada.alias} · {MOTIVO_LABEL[entrada.motivo]}
+            </span>
+            <span className="shrink-0 font-bold tabular-nums">
+              {formatCantidad(entrada.cantidad_anterior)} →{" "}
+              {formatCantidad(entrada.cantidad_nueva)}
+            </span>
+          </p>
+          <p className="text-meta text-ink-2">
+            {new Date(entrada.created_at).toLocaleString("es-ES", {
+              dateStyle: "short",
+              timeStyle: "short",
+            })}
+            {entrada.nota ? ` · ${entrada.nota}` : ""}
+          </p>
+        </li>
+      ))}
+    </ul>
   );
 }

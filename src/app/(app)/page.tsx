@@ -1,10 +1,9 @@
+// Portada: sin tarjetas, sin resúmenes, sin datos. La imagen de Inicio llega
+// con el acabado visual (docs/garito-acabado-visual.md); hasta entonces, la marca.
 export default function Home() {
   return (
-    <main className="flex-1 flex flex-col items-center justify-center gap-2 p-6 text-center">
-      <h1 className="text-2xl font-semibold">Garito</h1>
-      <p className="text-sm text-gray-500">
-        Fase 1 — autenticación y navegación listas.
-      </p>
-    </main>
+    <div className="flex flex-1 items-center justify-center pb-16">
+      <h1 className="font-display text-section tracking-display">Garito</h1>
+    </div>
   );
 }

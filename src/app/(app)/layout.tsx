@@ -1,16 +1,7 @@
-import Link from "next/link";
+import { AppNav } from "@/components/ui/app-nav";
 import { createClient } from "@/lib/supabase/server";
 import type { Miembro } from "@/lib/types";
 import { logout } from "./actions";
-
-const SECCIONES = [
-  { href: "/", label: "Inicio" },
-  { href: "/finanzas", label: "Finanzas" },
-  { href: "/almacen", label: "Almacén" },
-  { href: "/proyectos", label: "Proyectos" },
-  { href: "/organigrama", label: "Organigrama" },
-  { href: "/galeria", label: "Galería" },
-] as const;
 
 export default async function AppLayout({
   children,
@@ -31,43 +22,28 @@ export default async function AppLayout({
         .maybeSingle<Miembro>()
     : { data: null };
 
+  // Una sola columna de 480 px máx., centrada en escritorio.
   return (
-    <>
-      <header className="border-b border-gray-200">
-        <div className="flex items-center justify-between gap-3 px-4 py-2 text-sm">
-          {miembro && (
-            <span className="whitespace-nowrap text-gray-500">
-              {miembro.alias}
-              {miembro.rol === "admin" && " · admin"}
-            </span>
-          )}
-          <form action={logout} className="ml-auto shrink-0">
-            <button type="submit" className="text-gray-700 underline">
-              Salir
-            </button>
-          </form>
-        </div>
-        <nav className="flex items-center gap-4 overflow-x-auto border-t border-gray-100 px-4 py-2 text-sm">
-          {SECCIONES.map((seccion) => (
-            <Link
-              key={seccion.href}
-              href={seccion.href}
-              className="whitespace-nowrap text-gray-700 hover:text-gray-950"
-            >
-              {seccion.label}
-            </Link>
-          ))}
-        </nav>
-      </header>
+    <div className="mx-auto flex w-full max-w-content flex-1 flex-col px-gutter pb-safe">
+      <AppNav
+        usuario={
+          miembro
+            ? { alias: miembro.alias, admin: miembro.rol === "admin" }
+            : undefined
+        }
+        onSalir={logout}
+      />
 
       {user && !miembro ? (
-        <main className="flex-1 flex items-center justify-center p-6 text-center text-sm text-gray-600">
+        <main className="flex flex-1 items-center justify-center text-center text-body text-ink-2">
           Tu cuenta no está vinculada a ningún miembro todavía. Contacta con
           el admin.
         </main>
       ) : (
-        children
+        <main className="flex flex-1 flex-col gap-5 pb-10">
+          {children}
+        </main>
       )}
-    </>
+    </div>
   );
 }

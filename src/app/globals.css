@@ -1,26 +1,158 @@
 @import "tailwindcss";
 
+/*
+ * Sistema de diseño de Garito — ver docs/garito-sistema-diseno.md.
+ *
+ * Dos capas:
+ *  1. :root        → valores (los únicos sitios donde aparece un color literal).
+ *  2. @theme       → los expone a Tailwind como utilidades (bg-surface, text-ink-2…).
+ *
+ * El modo oscuro no está en la v1, pero añadirlo es redefinir el bloque :root
+ * dentro de un @media (prefers-color-scheme: dark); ningún componente lleva
+ * colores literales.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  color-scheme: light;
+
+  /* superficie */
+  --bg: #eff1f2; /* fondo de página: gris claro, para que las tarjetas blancas se despeguen */
+  --surface: #ffffff; /* tarjetas */
+  --surface-sunk: #e6e8ea; /* rehundido: estados vacíos, fila activa, botón pulsado */
+
+  /* texto */
+  --ink: #111214; /* principal, titulares y datos */
+  --ink-2: #61676c; /* secundario: categoría, "mín. 20" (≥4,5:1 también sobre el gris de página) */
+  --ink-3: #9ba1a6; /* terciario: placeholders, hints */
+  --ink-invert: #ffffff; /* sobre fondo negro */
+
+  /* líneas */
+  --line: #dcdfe2; /* borde de tarjeta y separadores */
+  --line-soft: #f0f1f2; /* divisores internos */
+
+  /* acción */
+  --action: #111214; /* botón primario: negro */
+  --action-hover: #2a2d30;
+
+  /* estado — el ÚNICO color con significado */
+  --alert: #e23a2e; /* bajo mínimos, deuda, error */
+  --alert-bg: #fdecea;
+  --ok: #1fa855; /* por encima del umbral, al corriente o a favor */
+  --ok-bg: #e9f7ef;
+  --warn: #e0a117; /* atención sin urgencia (opcional) */
+
+  /* accesibilidad */
+  --focus: #1741c4; /* anillo de foco visible en teclado */
+
+  /* elevación */
+  --shadow-card-value: 0 1px 2px rgb(17 18 20 / 0.06), 0 2px 8px rgb(17 18 20 / 0.05); /* tarjetas: apenas un toque */
+  --shadow-float-value: 0 8px 28px rgb(17 18 20 / 0.14); /* flotantes reales: menú, hoja inferior */
+}
+
+/*
+ * Al resetear las familias (`initial`) las clases crudas de Tailwind
+ * (text-gray-500, bg-red-600, rounded-xl, shadow-lg…) dejan de existir:
+ * solo compilan los tokens de abajo.
+ */
+@theme {
+  --color-*: initial;
+  --text-*: initial;
+  --radius-*: initial;
+  --shadow-*: initial;
+  --font-*: initial;
+  --tracking-*: initial;
+  --container-*: initial;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  /* color */
+  --color-page: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-sunk: var(--surface-sunk);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-ink-3: var(--ink-3);
+  --color-ink-invert: var(--ink-invert);
+  --color-line: var(--line);
+  --color-line-soft: var(--line-soft);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-alert: var(--alert);
+  --color-alert-bg: var(--alert-bg);
+  --color-ok: var(--ok);
+  --color-ok-bg: var(--ok-bg);
+  --color-warn: var(--warn);
+  --color-focus: var(--focus);
+
+  /* tipografía (rem: 1rem = 16px) */
+  --font-sans:
+    var(--font-archivo), "Archivo", system-ui, -apple-system, "Segoe UI",
+    sans-serif;
+  --font-display:
+    var(--font-archivo-black), "Archivo Black", var(--font-archivo), system-ui,
+    -apple-system, "Segoe UI", sans-serif;
+
+  --text-section: 2rem; /* 32 — título de sección */
+  --text-section--line-height: 1.05;
+  --text-screen: 1.375rem; /* 22 — título de pantalla interior */
+  --text-screen--line-height: 1.2;
+  --text-menu: 1rem; /* 16 — etiqueta del menú lateral */
+  --text-menu--line-height: 1.25;
+  --text-item: 1.0625rem; /* 17 — nombre de elemento en lista */
+  --text-item--line-height: 1.25;
+  --text-body: 0.9375rem; /* 15 — cuerpo */
+  --text-body--line-height: 1.45;
+  --text-label: 0.875rem; /* 14 — etiqueta / acción secundaria */
+  --text-label--line-height: 1.35;
+  --text-meta: 0.8125rem; /* 13 — metadato */
+  --text-meta--line-height: 1.3;
+  --text-figure: 1.25rem; /* 20 — dato numérico */
+  --text-figure--line-height: 1.1;
+
+  --tracking-display: -0.02em;
+
+  /* radios */
+  --radius-card: 14px; /* tarjeta de lista */
+  --radius-button: 12px; /* botón, pastilla de resumen */
+  --radius-field: 10px; /* campo de formulario */
+  --radius-pill: 999px; /* chip, badge */
+
+  /* elevación */
+  --shadow-card: var(--shadow-card-value);
+  --shadow-float: var(--shadow-float-value);
+
+  /* espaciado semántico (el resto usa la escala base 4 de Tailwind) */
+  --spacing-gutter: 1rem; /* margen lateral de pantalla: 16 */
+  --spacing-cards: 0.625rem; /* separación entre tarjetas de lista: 10 */
+  --spacing-card-x: 1rem; /* padding interno de tarjeta: 16 */
+  --spacing-card-y: 0.875rem; /* padding interno de tarjeta: 14 */
+
+  /* anchos */
+  --container-content: 30rem; /* ancho máximo de contenido: 480 */
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Áreas seguras del móvil (PWA instalada, notch). Requiere viewport-fit=cover. */
+@utility pt-safe {
+  padding-top: env(safe-area-inset-top);
+}
+@utility pb-safe {
+  padding-bottom: env(safe-area-inset-bottom);
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: var(--text-body);
+  line-height: var(--text-body--line-height);
+}
+
+/* Foco visible en teclado. No se elimina el outline por estética. */
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* Las cifras nunca bailan de ancho. */
+input[type="number"] {
+  font-variant-numeric: tabular-nums;
 }

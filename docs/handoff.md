@@ -14,7 +14,51 @@ hay que saber que no está en ningún otro sitio. Complementa, no repite:
 
 ---
 
-## Última sesión de trabajo (2026-09-18)
+## Sesión 2026-09-19: sistema de diseño aplicado a toda la app
+
+Se implementó [garito-sistema-diseno.md](garito-sistema-diseno.md) completo, como pide su §10,
+**antes** de la Fase 3. Sin cambios de esquema ni de lógica de negocio: solo capa visual.
+
+- Tokens en `globals.css` (`:root` con los valores + `@theme` que los expone a Tailwind).
+  Tipografía Archivo / Archivo Black vía `next/font`. Dependencia nueva: `lucide-react`.
+- `src/components/ui/`: los 8 componentes de §5 más `Field/Input/Select/FormError`,
+  `BottomSheet/ConfirmSheet` y `CardList`. Catálogo y reglas en su `README.md`.
+- Navegación: la cabecera con pestañas se sustituyó por `AppBar` + `SideDrawer`
+  (Inicio · Finanzas · Almacén · Proyectos · Organigrama · Galería). "Salir" y el alias del
+  usuario viven ahora al pie/cabecera del menú lateral.
+- Almacén rehecho con los componentes: cada producto es una `ListCard` con botones
+  "Editar cantidad" / "Ver historial" (y "Editar producto" para admin) en su propia fila.
+  Login, Inicio y las secciones "próximamente" también migrados. Validado a 375 px.
+
+Decisiones tomadas que la especificación no cerraba (revisables):
+
+1. **La `SummaryPill` de Almacén filtra**: al pulsarla muestra solo los productos bajo mínimos
+   (segundo toque, todos). El diseño solo dice "pulsable entera".
+2. **Las filas de Almacén no llevan chevron ni navegan**: no hay pantalla de detalle de
+   producto. Cuando exista (o en Finanzas), pasar `href` a `ListCard` lo activa.
+3. **Los formularios siguen en línea dentro de la tarjeta** (`panel`), no en hoja inferior:
+   con teclado móvil una hoja fija puede quedar tapada. Las **confirmaciones** (borrar producto,
+   aviso de nombre duplicado) sí usan `ConfirmSheet`, sustituyendo a `window.confirm`.
+4. **"Editar producto"** sustituye al botón "Admin" y agrupa edición + borrado.
+5. **Inicio** muestra solo la marca "Garito" hasta que llegue la imagen del acabado visual.
+7. **Contraste por bloques** (petición del propietario, mismo día): fondo de página gris
+   (`--bg` `#EFF1F2`), tarjetas blancas con `--shadow-card`, `--surface-sunk` más oscuro que el
+   fondo y `--ink-2`/`--line` ligeramente más oscuros. Sustituye a "casi sin sombra" de §4 del
+   documento de diseño (ya actualizado). No volver a "borde sin sombra" sin preguntar.
+6. `AppBar` es `sticky` (para no perder la hamburguesa al hacer scroll): no estaba especificado.
+
+Gotchas de esta sesión:
+
+- **Tailwind v4 no lee `tailwind.config`**: el tema va en `@theme` dentro de `globals.css`.
+  Se resetean las familias (`--color-*: initial`, etc.) para que las clases crudas no compilen.
+- **No poner dos utilidades de padding solapadas** (`pb-10 pb-safe`, `py-10 pt-safe`): gana la
+  que Tailwind emita última, no la última escrita. Separar en contenedores anidados.
+- El linter de React (compiler) prohíbe leer `ref.current` en render, incluso dentro de
+  closures devueltas por un hook; `useEnvioConfirmado` guarda el `FormData` en estado en vez de
+  usar `requestSubmit()` + ref.
+- `<dialog>` nativo: la tecla Escape *sintética* (herramientas de test) no lo cierra; la real sí.
+
+## Sesión anterior (2026-09-18)
 
 Se completó y validó en local (con el usuario de prueba y un segundo usuario `miembro`
 creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:

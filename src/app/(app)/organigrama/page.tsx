@@ -1,7 +1,11 @@
+import { EmptyState } from "@/components/ui/empty-state";
+import { PageHeader } from "@/components/ui/page-header";
+
 export default function OrganigramaPage() {
   return (
-    <main className="flex-1 flex items-center justify-center p-6 text-center text-sm text-gray-500">
-      Organigrama — próximamente (Fase 7).
-    </main>
+    <>
+      <PageHeader title="Organigrama" />
+      <EmptyState>Próximamente.</EmptyState>
+    </>
   );
 }

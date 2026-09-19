@@ -1,3 +1,4 @@
+import { PageHeader } from "@/components/ui/page-header";
 import { createClient } from "@/lib/supabase/server";
 import type { Miembro, Producto } from "@/lib/types";
 import { ListaProductos } from "./almacen-client";
@@ -36,12 +37,13 @@ export default async function AlmacenPage() {
   const bajosIds = new Set((bajos ?? []).map((p) => p.id));
 
   return (
-    <main className="flex-1">
+    <>
+      <PageHeader title="Almacén" />
       <ListaProductos
         productos={productos ?? []}
         bajosIds={bajosIds}
         esAdmin={miembro?.rol === "admin"}
       />
-    </main>
+    </>
   );
 }

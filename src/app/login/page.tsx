@@ -1,3 +1,5 @@
+import { ButtonPrimary } from "@/components/ui/buttons";
+import { Field, FormError, Input } from "@/components/ui/field";
 import { login } from "./actions";
 
 export default async function LoginPage({
@@ -6,53 +8,38 @@ export default async function LoginPage({
   const { error } = await searchParams;
 
   return (
-    <main className="flex-1 flex flex-col items-center justify-center p-6">
+    <main className="mx-auto flex w-full max-w-content flex-1 flex-col justify-center px-gutter pt-safe pb-safe">
       <form
         action={login}
-        className="w-full max-w-sm flex flex-col gap-4 rounded-lg border border-gray-200 p-6"
+        className="my-10 flex flex-col gap-5 rounded-card border border-line bg-surface p-5 shadow-card"
       >
-        <h1 className="text-xl font-semibold text-center">Garito</h1>
+        <h1 className="font-display text-section tracking-display">Garito</h1>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-sm text-gray-600">
-            Email
-          </label>
-          <input
-            id="email"
+        <Field label="Email">
+          <Input
             name="email"
             type="email"
             required
             autoComplete="email"
-            className="rounded border border-gray-300 px-3 py-2"
           />
-        </div>
+        </Field>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm text-gray-600">
-            Contraseña
-          </label>
-          <input
-            id="password"
+        <Field label="Contraseña">
+          <Input
             name="password"
             type="password"
             required
             autoComplete="current-password"
-            className="rounded border border-gray-300 px-3 py-2"
           />
-        </div>
+        </Field>
 
-        {error && (
-          <p className="text-sm text-red-600">
-            Email o contraseña incorrectos.
-          </p>
-        )}
+        <FormError>
+          {error ? "Email o contraseña incorrectos." : null}
+        </FormError>
 
-        <button
-          type="submit"
-          className="rounded bg-gray-900 px-3 py-2 text-white"
-        >
+        <ButtonPrimary type="submit" fullWidth>
           Entrar
-        </button>
+        </ButtonPrimary>
       </form>
     </main>
   );
