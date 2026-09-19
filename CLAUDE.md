@@ -63,6 +63,22 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
    reversible por lote (nunca restaurando backups).
 7. Diseño móvil primero: cada pantalla se valida a 375px de ancho antes de darla por buena.
 
+## Diseño — reglas obligatorias
+
+- Los colores, tipografías, espaciados y radios están definidos en `tailwind.config`
+  y en las variables CSS de `globals.css`. USAR SIEMPRE LOS TOKENS.
+  Prohibido `text-gray-500`, `bg-red-600`, `rounded-xl` arbitrarios o valores en px sueltos.
+- Antes de crear un componente nuevo, comprobar si existe en `components/ui/`.
+  Si existe, se usa. Si hace falta uno nuevo, se añade ahí y se documenta.
+- Ningún elemento pulsable mide menos de 48x48 px.
+- Objetivos pulsables nunca anidados: o navega la fila, o actúan los botones de dentro.
+- Todo número usa `tabular-nums`. Todo importe se formatea con Intl es-ES / EUR.
+- Color solo con significado: rojo = atención o deuda, verde = correcto o saldo a favor,
+  negro = neutro. Nada decorativo lleva color.
+- Cada pantalla se valida a 375 px de ancho antes de darse por buena.
+- Toda lista tiene su estado vacío.
+- Modo oscuro: fuera de alcance en v1, pero no incrustar colores literales que impidan añadirlo.
+
 ## Decisiones ya cerradas (no volver a preguntar)
 
 - Día de devengo: el 5 de cada mes, configurable por admin (rango 1–28).
