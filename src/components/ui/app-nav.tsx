@@ -5,7 +5,6 @@ import {
   House,
   Image as ImageIcon,
   Package,
-  Users,
   Wallet,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
@@ -19,7 +18,6 @@ const SECCIONES: readonly NavItem[] = [
   { href: "/finanzas", label: "Finanzas", icon: Wallet },
   { href: "/almacen", label: "Almacén", icon: Package },
   { href: "/proyectos", label: "Proyectos", icon: Hammer },
-  { href: "/organigrama", label: "Organigrama", icon: Users },
   { href: "/galeria", label: "Galería", icon: ImageIcon },
 ];
 

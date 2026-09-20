@@ -48,7 +48,6 @@ Guardar todo en `public/ilustraciones/` dentro del repositorio.
 | `sec-finanzas.svg` | Hucha, billetes, caja registradora | SVG o PNG | ≥ 400 px |
 | `sec-almacen.svg` | La furgoneta de la captura | SVG o PNG | ≥ 400 px |
 | `sec-proyectos.svg` | Herramientas, escalera, brocha | SVG o PNG | ≥ 400 px |
-| `sec-organigrama.svg` | Corona, banda presidencial | SVG o PNG | ≥ 400 px |
 | `sec-galeria.svg` | Cámara de fotos | SVG o PNG | ≥ 400 px |
 | `logo.svg` | El rótulo "EL GARITO" | SVG preferente | — |
 
@@ -82,7 +81,6 @@ Se ajusta al final, cuando las pantallas ya existen y se ve cómo suenan en cont
 - Tuteo y lenguaje directo. Es una app entre amigos, no un banco.
 - Los estados vacíos son la oportunidad de que la app tenga gracia: "Aquí no hay nada. Alguien tendrá que ir a comprar."
 - **Excepción: Finanzas se mantiene sobria.** Los mensajes sobre dinero ajeno no se prestan a bromas. "Debe 40 €" y nada más.
-- El Organigrama es lo contrario: ahí el tono es el contenido.
 
 ---
 

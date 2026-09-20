@@ -17,14 +17,13 @@ En el dashboard de Supabase → **Authentication → Users → Add user**:
 En **SQL Editor**, ejecuta (sustituyendo los valores):
 
 ```sql
-insert into public.miembros (auth_user_id, nombre, alias, email, rol, departamento, activo)
-select id, 'Nombre Completo', 'Alias', 'email@ejemplo.com', 'miembro', null, true
+insert into public.miembros (auth_user_id, nombre, alias, email, rol, activo)
+select id, 'Nombre Completo', 'Alias', 'email@ejemplo.com', 'miembro', true
 from auth.users
 where email = 'email@ejemplo.com';
 ```
 
 - `rol`: `'miembro'` para todos salvo tú mismo como `'admin'`.
-- `departamento`: déjalo en `null` por ahora (Fase 5, organigrama).
 - El `select ... from auth.users where email = ...` evita tener que copiar el UUID a mano.
 
 ## Verificación

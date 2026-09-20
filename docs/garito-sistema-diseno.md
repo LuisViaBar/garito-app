@@ -181,7 +181,7 @@ Menú lateral que entra desde la izquierda, ancho 280, fondo blanco, sombra de e
 Cada sección: fila de 56 px con icono 22 a la izquierda y etiqueta 16/600. Sección activa con fondo `--surface-sunk`.
 Se cierra pulsando fuera, con gesto de arrastre o con Escape.
 
-Orden del menú: **Inicio · Finanzas · Almacén · Proyectos · Organigrama · Galería**.
+Orden del menú: **Inicio · Finanzas · Almacén · Proyectos · Galería**.
 
 ---
 
@@ -213,7 +213,6 @@ Esto no es estética, es lo que hace que la app se use sin pelearse con ella.
 | Finanzas | `wallet` |
 | Almacén | `package` |
 | Proyectos | `hammer` |
-| Organigrama | `users` |
 | Galería | `image` |
 
 > Los iconos de interfaz salen de esta librería. Las **ilustraciones** (furgoneta, cabeceras) son otra cosa distinta y van en el documento de acabado visual.

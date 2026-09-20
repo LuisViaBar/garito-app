@@ -80,7 +80,8 @@ Gotchas de esta sesión:
 
 **Cambio de plan:** el documento de diseño §8 se reordenó por petición del propietario. Finanzas
 se aplaza al final porque depende de datos de muestra que aún no han llegado. Nuevo orden:
-3 Proyectos · 4 Galería · 5 Organigrama · 6 Finanzas (apuntes) · 7 Finanzas (importación) · 8 PWA.
+3 Proyectos · 4 Galería · 5 Finanzas (apuntes) · 6 Finanzas (importación) · 7 PWA. (El
+Organigrama, que era la 5, se sacó del alcance el mismo día y las siguientes se renumeraron.)
 Ya actualizadas las referencias de número de fase en `CLAUDE.md`, `pendientes-produccion.md`,
 `alta-miembros.md` y en el propio diseño (§4.1, §8, §9). El propietario confirmó que el orden
 inicial 6/7 de su edición era un error y se invirtió: apuntes (6) antes que importación (7).
@@ -164,7 +165,7 @@ Se implementó [garito-sistema-diseno.md](garito-sistema-diseno.md) completo, co
 - `src/components/ui/`: los 8 componentes de §5 más `Field/Input/Select/FormError`,
   `BottomSheet/ConfirmSheet` y `CardList`. Catálogo y reglas en su `README.md`.
 - Navegación: la cabecera con pestañas se sustituyó por `AppBar` + `SideDrawer`
-  (Inicio · Finanzas · Almacén · Proyectos · Organigrama · Galería). "Salir" y el alias del
+  (Inicio · Finanzas · Almacén · Proyectos · Galería). "Salir" y el alias del
   usuario viven ahora al pie/cabecera del menú lateral.
 - Almacén rehecho con los componentes: cada producto es una `ListCard` con botones
   "Editar cantidad" / "Ver historial" (y "Editar producto" para admin) en su propia fila.
@@ -254,7 +255,7 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
   revisar si `v_stock_bajo` necesita el mismo tratamiento.
 - **Los campos `numeric` de Postgres llegan como `number` de JS**, no como `string`, a
   través de PostgREST/supabase-js (a diferencia de otros drivers de Postgres). No hace
-  falta parsear `cantidad_actual`/`umbral_minimo` a mano. Si en Finanzas (Fases 6-7) se ve
+  falta parsear `cantidad_actual`/`umbral_minimo` a mano. Si en Finanzas (Fases 5-6) se ve
   algo distinto con importes grandes o muchos decimales, revisar esta asunción antes de
   asumir que es un bug.
 
@@ -276,13 +277,17 @@ configuración `garito-dev` (npm run dev, puerto 3000).
 
 1. **Fase 3 (Proyectos):** cerrada salvo la prueba con un usuario no admin (ver arriba).
 2. **Fase 4 — Galería:** código listo; falta aplicar la migración y las pruebas de la sesión
-   2026-09-20 (2), arriba. Después, **Fase 5 — Organigrama** (leer §4.4 del diseño).
-3. **Finanzas queda para las Fases 6 (apuntes) y 7 (importación)**, a la espera de la muestra de extracto y de los
+   2026-09-20 (2), arriba. Después de Galería solo queda Finanzas.
+3. **Finanzas queda para las Fases 5 (apuntes) y 6 (importación)**, a la espera de la muestra de extracto y de los
    saldos iniciales (`pendientes-produccion.md`). Nota de alcance, redactada cuando Finanzas era
+0. **Organigrama eliminado del alcance (2026-09-20).** Se quitó la entrada del menú, la ruta
+   `/organigrama` y `miembros.departamento` en código. La migración
+   `supabase/migrations/20260920140000_quitar_departamento.sql` ya está aplicada a mano en el
+   SQL Editor (2026-09-20). El `insert` de `alta-miembros.md` ya no lleva `departamento`.
    la Fase 3, vigente para cuando se retome:
 
-**Alcance de la Fase 6 (apuntes, devengo, saldos y extracto), no de la 7**: no incluye
-importación bancaria ni conciliación (eso es la Fase 7, bloqueada además por falta de una
+**Alcance de la Fase 5 (apuntes, devengo, saldos y extracto), no de la 6**: no incluye
+importación bancaria ni conciliación (eso es la Fase 6, bloqueada además por falta de una
 muestra real de extracto — ver `pendientes-produccion.md`). En esta fase los abonos se
 introducen a mano (vía apuntes de tipo `ajuste`, o una pantalla simple de alta manual de
 abono) para poder probar el modelo de saldo con datos ficticios.
@@ -294,7 +299,7 @@ matizada del diseño. Resumen operativo:
   devengo 5 por defecto, editable solo admin), `apuntes` (libro mayor, con todos los
   `CHECK` de signo/periodo del §5 — **inmutables salvo el campo `anulado`**), `operaciones`
   (lotes reversibles: de momento solo tipo `devengo` y `saldo_inicial`; `importacion` se
-  activa en la Fase 7). RLS + GRANT desde el primer paso, como siempre.
+  activa en la Fase 6). RLS + GRANT desde el primer paso, como siempre.
 - Vistas derivadas (nunca guardar el saldo): `v_saldo_miembro`, `v_extracto_miembro` (con
   `SUM() OVER (PARTITION BY miembro_id ORDER BY ...)`). **Ojo con la trampa del §5: el
   saldo suma TODOS los apuntes, incluidos los anulados** — el contraapunte ya compensa al

@@ -5,7 +5,6 @@ export type Miembro = {
   alias: string;
   email: string;
   rol: "admin" | "miembro";
-  departamento: string | null;
   activo: boolean;
   created_at: string;
 };

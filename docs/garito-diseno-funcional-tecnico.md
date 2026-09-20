@@ -44,8 +44,6 @@ Modelo deliberadamente simple. **Dos roles globales:**
 
 **Única excepción a la simplicidad:** la sección de Proyectos tiene permisos por proyecto (ver detalle en §4.3).
 
-El **organigrama no otorga permisos**. Es puramente decorativo/humorístico.
-
 ---
 
 ## 4. Secciones
@@ -253,7 +251,7 @@ hash_unico = SHA-256(
 
 > ⚠️ **DECISIÓN PENDIENTE — requiere la muestra del extracto bancario.**
 >
-> Antes de implementar la importación (fase 7) hay que revisar un fichero real exportado de la cuenta del Garito y comprobar si **incluye una referencia propia de transacción** de la entidad bancaria (un identificador único por movimiento).
+> Antes de implementar la importación (fase 6) hay que revisar un fichero real exportado de la cuenta del Garito y comprobar si **incluye una referencia propia de transacción** de la entidad bancaria (un identificador único por movimiento).
 >
 > - **Si la incluye:** se usa esa referencia directamente como `hash_unico`. Es más fiable que cualquier composición nuestra, porque la garantiza el banco y no depende de normalizaciones, formatos de fecha ni de cómo venga escrito el concepto.
 > - **Si no la incluye:** se usa el hash compuesto definido arriba.
@@ -331,16 +329,7 @@ Implementación: tabla `proyecto_miembros` + políticas RLS en Postgres. **La vi
 
 ---
 
-### 4.4 Organigrama
-
-Sección **humorística e informativa**. Cero lógica de negocio, cero impacto en permisos.
-
-- Vista visual con foto de cada miembro y su cargo inventado (presidente, vicepresidente, guardianes...).
-- Solo **admin** puede editar los cargos.
-
----
-
-### 4.5 Galería
+### 4.4 Galería
 
 Dos álbumes **fijos**, sin gestión de álbumes:
 
@@ -375,10 +364,9 @@ miembros
   alias,                  -- apodo; es lo que se muestra en la interfaz
   email,
   rol ('admin' | 'miembro'),
-  departamento (texto, humorístico; alimenta el organigrama),
   activo,                 -- determina si devenga cuota
   created_at
-  -- sin foto_url por ahora (se añadirá si se decide ilustrar el organigrama)
+  -- sin foto_url ni departamento: el Organigrama queda fuera del alcance
   -- sin fechas de alta/baja: altas y bajas son extraordinarias (ver §4.1.1)
   -- NO se almacena IBAN ni ningún dato bancario personal (decisión explícita)
 
@@ -572,10 +560,9 @@ Estas son instrucciones de proceso, tan importantes como las funcionales.
 | 2 | Almacén (la sección más simple y de valor inmediato) | Consulta y edición de stock con log |
 | 3 | Proyectos: proyectos, subproyectos, tareas, comentarios, permisos | Proyecto de remodelación en uso |
 | 4 | Galería (con compresión en cliente) | Dos álbumes operativos |
-| 5 | Organigrama | Pantalla de cachondeo |
-| 6 | Finanzas: modelo de apuntes, devengo mensual, saldos y extracto | Saldos calculados sobre apuntes introducidos a mano |
-| 7 | Finanzas: importación de extracto con conciliación y previsualización | Importación real desde el banco |
-| 8 | PWA: manifest, service worker, instalación | App instalable en el móvil |
+| 5 | Finanzas: modelo de apuntes, devengo mensual, saldos y extracto | Saldos calculados sobre apuntes introducidos a mano |
+| 6 | Finanzas: importación de extracto con conciliación y previsualización | Importación real desde el banco |
+| 7 | PWA: manifest, service worker, instalación | App instalable en el móvil |
 
 **Recomendación:** empezar por el Almacén y no por Finanzas. Es la sección más sencilla, valida el stack completo de punta a punta y da valor útil desde la primera semana. Finanzas es la que tiene más reglas delicadas y conviene abordarla con el terreno ya asentado.
 
@@ -583,8 +570,7 @@ Estas son instrucciones de proceso, tan importantes como las funcionales.
 
 ## 9. Puntos abiertos
 
-- Definir los cargos concretos del organigrama.
-- Confirmar el formato exacto del extracto bancario: columnas disponibles y, sobre todo, **cómo aparece escrito el ordenante** (nombre completo, abreviado, truncado, en mayúsculas). Al ser el criterio principal de cruce, **condiciona directamente la fiabilidad de la conciliación**. Conviene exportar un extracto de muestra real y revisarlo antes de la fase 7.
+- Confirmar el formato exacto del extracto bancario: columnas disponibles y, sobre todo, **cómo aparece escrito el ordenante** (nombre completo, abreviado, truncado, en mayúsculas). Al ser el criterio principal de cruce, **condiciona directamente la fiabilidad de la conciliación**. Conviene exportar un extracto de muestra real y revisarlo antes de la fase 6.
 - ⚠️ **Decidir el identificador único de transacción** a la vista de esa misma muestra: referencia propia del banco (preferente) o hash compuesto. Ver §4.1. Decisión de una sola vez, costosa de revertir.
 - Recopilar el **nombre exacto del titular bancario de cada miembro** para precargar la tabla de alias y reducir el trabajo manual de las primeras importaciones.
 - Decidir si en el futuro se activan notificaciones (PWA push vs. mensaje al grupo de WhatsApp desde la API).

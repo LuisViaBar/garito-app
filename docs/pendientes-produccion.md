@@ -16,10 +16,9 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
       Bloquea poner **Finanzas** en producción (no su desarrollo, que usa datos ficticios).
 - [ ] Muestra real de un extracto bancario del Garito + decisión sobre el identificador único
       de transacción (referencia propia del banco vs. hash compuesto) — ver §4.1 y §9.
-      Bloquea implementar bien la **Fase 7** (importación bancaria).
+      Bloquea implementar bien la **Fase 6** (importación bancaria).
 - [ ] Nombre exacto del titular bancario de cada miembro, para precargar `alias_bancarios`
       y reducir conciliación manual en los primeros meses reales.
-- [ ] Cargos concretos del organigrama (Fase 5, decorativo, no bloqueante funcional).
 
 ## Infraestructura / entorno
 

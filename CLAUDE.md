@@ -56,8 +56,9 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
   migración a mano en el SQL Editor y ejecutar las pruebas de [docs/handoff.md](docs/handoff.md).
 - **Cambio de orden (2026-09-20):** Finanzas pasa al final porque depende de datos de muestra
   (extracto bancario, saldos iniciales) que aún no han llegado. Fases siguientes en orden:
-  4 Galería, 5 Organigrama, 6 Finanzas (apuntes/devengo/saldos), 7 Finanzas (importación
-  bancaria), 8 PWA. Ver §8 del documento de diseño para el detalle de cada entregable.
+  4 Galería, 5 Finanzas (apuntes/devengo/saldos), 6 Finanzas (importación bancaria),
+  7 PWA. El Organigrama queda fuera del alcance del proyecto. Ver §8 del documento de diseño
+  para el detalle de cada entregable.
 
 ## Reglas de proceso (resumen — el detalle está en §7 del documento de diseño)
 
@@ -109,6 +110,6 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
 
 - Saldos iniciales de los 25 miembros (bloquea poner Finanzas en producción, no su desarrollo).
 - Muestra real de extracto bancario y decisión sobre el identificador único de transacción
-  (bloquea la fase 7, importación bancaria).
+  (bloquea la fase 6, importación bancaria).
 
 Ver §9 del documento de diseño para el listado completo.
