@@ -356,6 +356,8 @@ Dos álbumes **fijos**, sin gestión de álbumes:
 → **Comprimir y redimensionar en el navegador antes de subir** (lado cliente, p. ej. `canvas` o `browser-image-compression`), y generar **miniatura** para la vista de galería. Nunca cargar los originales en el grid.
 → Se guarda `tamano_bytes` de cada foto para poder vigilar el consumo acumulado desde la propia app, sin entrar en el panel de Supabase.
 
+**Implementación (Fase 4).** Bucket privado `galeria`; rutas `<album>/<uuid>.webp` y `<album>/<uuid>_mini.webp` (`.jpg` si el navegador no codifica WebP). La compresión deja la foto en ≤ 1600 px y la miniatura en ≤ 480 px. `tamano_bytes` suma foto + miniatura. Subida directa del navegador a Storage y registro posterior de la fila. Detalle y decisiones en `docs/handoff.md`.
+
 **Guardar rutas, no URLs.** En la base de datos se almacena la ruta dentro del bucket (`galeria/grupo/abc123.webp`), nunca la URL completa. Si el bucket es privado, las URLs son firmadas y **caducan**: guardarlas dejaría la tabla llena de enlaces muertos en cuestión de horas. La app genera la URL válida en el momento de mostrar la imagen. Como efecto secundario, cambiar de proveedor o reorganizar buckets no obliga a reescribir la tabla.
 
 ---

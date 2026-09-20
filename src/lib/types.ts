@@ -80,3 +80,15 @@ export type Comentario = {
   texto: string;
   created_at: string;
 };
+
+export type Album = "merchandising" | "grupo";
+
+export type Foto = {
+  id: string;
+  album: Album;
+  storage_path: string;
+  thumbnail_path: string;
+  tamano_bytes: number;
+  subida_por: string;
+  created_at: string;
+};

@@ -49,6 +49,11 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
   `comentarios`, RLS con permisos heredados por subproyectos, creación solo por
   `crear_proyecto()`), listado en `/proyectos` y detalle en `/proyectos/[id]` (subproyectos en
   `/proyectos/[id]/[subId]`). Migración aplicada a mano en el SQL Editor.
+- **Fase 4: Galería — código listo, migración pendiente de aplicar** (2026-09-20). Migración
+  `supabase/migrations/20260920120000_galeria.sql` (tabla `fotos`, bucket privado `galeria`, RLS
+  en la tabla y en `storage.objects`, vista `v_uso_galeria`). `/galeria` (los dos álbumes) y
+  `/galeria/[album]` (rejilla de miniaturas, visor, subida con compresión en cliente). Aplicar la
+  migración a mano en el SQL Editor y ejecutar las pruebas de [docs/handoff.md](docs/handoff.md).
 - **Cambio de orden (2026-09-20):** Finanzas pasa al final porque depende de datos de muestra
   (extracto bancario, saldos iniciales) que aún no han llegado. Fases siguientes en orden:
   4 Galería, 5 Organigrama, 6 Finanzas (apuntes/devengo/saldos), 7 Finanzas (importación

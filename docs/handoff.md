@@ -14,6 +14,68 @@ hay que saber que no está en ningún otro sitio. Complementa, no repite:
 
 ---
 
+## Sesión 2026-09-20 (2): Fase 4 — Galería (código listo, migración sin aplicar)
+
+Hecho: migración `20260920120000_galeria.sql`, `/galeria` (lista de los dos álbumes con su
+contador; el admin ve además el espacio usado frente a 1 GB) y `/galeria/[album]` (rejilla de
+3 columnas, visor a pantalla completa con anterior/siguiente y borrado, subida múltiple con
+progreso). `tsc` y `eslint` pasan. **No se ha aplicado la migración ni se ha probado contra
+Supabase**: en el navegador se validó a 375 px la pantalla vacía, la rejilla y el visor con datos
+falsos (página temporal ya borrada), y la compresión con el código real (foto sintética de
+4032×3024 y 5,7 MB → 1600×1200 WebP de 268 KB + miniatura de 480 px y 26 KB; una imagen
+pequeña no se amplía; un fichero corrupto se rechaza).
+
+**Para cerrar la fase (a mano, en este orden):**
+
+1. Pegar `20260920120000_galeria.sql` en el SQL Editor. Si falla con `must be owner of table
+   objects` en las políticas de `storage.objects`, crearlas desde Storage → Policies con las
+   mismas condiciones (están comentadas en la migración). Comprobar que `storage.objects` tiene
+   la columna `owner_id` (la política de borrado depende de ella).
+2. Subir 2-3 fotos reales de móvil (idealmente iPhone y Android) a cada álbum y comprobar que
+   pesan ~250-400 KB en Storage, que no salen tumbadas y que la miniatura carga en la rejilla.
+3. Con un usuario **no admin**: puede subir, ve todo, solo ve "Borrar" en sus fotos. Borrar una
+   foto suya deja `fotos` **y** los dos ficheros de Storage limpios (mirar el bucket). Un admin
+   puede borrar las de otros. Atacar la API con la sesión no admin: `delete` sobre una foto
+   ajena debe afectar a 0 filas, `insert` con `subida_por` de otro debe dar 403, y subir a una
+   carpeta que no sea un álbum debe rechazarse.
+4. Con el admin: `/galeria` muestra "Espacio de la galería"; con un no admin no aparece.
+
+Decisiones tomadas que el diseño no cerraba (revisables):
+
+1. **Subida directa navegador → Storage**, y después un server action (`registrarFoto`) que
+   inserta la fila. Un server action tiene tope de 1 MB por petición, y así los ficheros no pasan
+   por Vercel. Si el registro falla, el cliente borra los ficheros que acaba de subir.
+2. **Bucket `galeria`, rutas `<album>/<uuid>.webp` y `<album>/<uuid>_mini.webp`** (`.jpg` en los
+   Safari que no codifican WebP). El §4.5 escribe `galeria/grupo/abc123.webp` sin aclarar si
+   `galeria` es el bucket o una carpeta; se interpretó como bucket. Un `CHECK` obliga a que las
+   rutas cuelguen de la carpeta de su álbum.
+3. **`tamano_bytes` = foto + miniatura**, es decir, lo que la fila ocupa de verdad en Storage.
+4. **Compresión**: lado mayor 1600 px, WebP a calidad 0,8 (baja hasta 0,5 si pasara de 1,5 MB);
+   miniatura de 480 px. Sin dependencias (`canvas`). Un GIF animado se guarda como imagen fija.
+5. **Segunda barrera en el bucket**: 2 MB por fichero y solo `image/webp` / `image/jpeg`.
+6. **Dos pantallas** (lista de álbumes → álbum) en vez de pestañas, para reutilizar `ListCard`
+   y la flecha de volver de `AppNav`; no hace falta ningún componente nuevo en `ui/`.
+7. **Paginación por tandas de 60** (`?n=120`, "Ver más fotos"). Todas las URL firmadas (miniatura
+   y foto) se generan en el servidor en un solo lote y duran 1 h; no se guardan en BBDD.
+8. **Borrado**: primero la fila (RLS decide) y luego los ficheros; si estos fallan queda un
+   fichero huérfano (se registra en el log del servidor) en vez de una fila con imagen rota.
+9. **Sin edición de fotos** (no hay UPDATE ni GRANT de UPDATE): se borra y se vuelve a subir.
+10. El visor es un `<dialog>` propio en la carpeta de la ruta (`rejilla.tsx`), no un componente
+    de `ui/`: es específico de la galería.
+
+Gotchas de esta sesión:
+
+- **Storage tampoco da error cuando una política impide borrar**: `remove()` devuelve menos
+  objetos de los pedidos. Por eso `eliminarFoto` compara cuántos se borraron.
+- **Safari que no codifica WebP devuelve un PNG en silencio** en `canvas.toBlob('image/webp')`
+  (enorme para una foto): `comprimir-imagen.ts` mira el `type` del resultado y recurre a JPEG.
+- **Orientación EXIF**: `createImageBitmap(..., { imageOrientation: "from-image" })`; sin ello
+  las fotos verticales de móvil salen tumbadas.
+- Otro chat ya tenía `next dev` en el puerto 3000 sobre esta carpeta; `preview_start` con
+  `name` falla en ese caso. Se puede abrir con `preview_start` con `url` (recarga en caliente).
+
+---
+
 ## Sesión 2026-09-20: Fase 3 — Proyectos (completada)
 
 **Cambio de plan:** el documento de diseño §8 se reordenó por petición del propietario. Finanzas
@@ -213,10 +275,8 @@ configuración `garito-dev` (npm run dev, puerto 3000).
 ## Qué toca ahora
 
 1. **Fase 3 (Proyectos):** cerrada salvo la prueba con un usuario no admin (ver arriba).
-2. **Fase 4 — Galería** (con compresión en cliente y miniaturas, dos álbumes fijos), luego
-   **Fase 5 — Organigrama**. Leer §4.4/§4.5 y §5 (`fotos`) del diseño. Supabase Storage es nuevo
-   en el proyecto: bucket privado, guardar rutas y no URLs firmadas, RLS también en
-   `storage.objects`.
+2. **Fase 4 — Galería:** código listo; falta aplicar la migración y las pruebas de la sesión
+   2026-09-20 (2), arriba. Después, **Fase 5 — Organigrama** (leer §4.4 del diseño).
 3. **Finanzas queda para las Fases 6 (apuntes) y 7 (importación)**, a la espera de la muestra de extracto y de los
    saldos iniciales (`pendientes-produccion.md`). Nota de alcance, redactada cuando Finanzas era
    la Fase 3, vigente para cuando se retome:

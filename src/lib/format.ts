@@ -15,6 +15,15 @@ export function formatCantidad(valor: number): string {
   return cantidad.format(valor);
 }
 
+const megas = new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 });
+
+/** Tamaño de fichero en formato español: `312 KB`, `42,3 MB`, `1,2 GB`. */
+export function formatBytes(bytes: number): string {
+  if (bytes >= 1024 ** 3) return `${megas.format(bytes / 1024 ** 3)} GB`;
+  if (bytes >= 1024 ** 2) return `${megas.format(bytes / 1024 ** 2)} MB`;
+  return `${Math.round(bytes / 1024)} KB`;
+}
+
 // Zona horaria fija: el mismo texto en servidor (UTC en Vercel) y navegador,
 // para que la hidratación no discrepe.
 const fechaHora = new Intl.DateTimeFormat("es-ES", {

@@ -74,6 +74,15 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
   no lo estuvieran. Doble lección: el `GRANT` aplica también a vistas, y **toda consulta debe
   comprobar su `error`**, aunque sea de solo lectura, para que un fallo así no quede oculto.
 
+### Fase 4 — Galería
+- Implementada: tabla `fotos`, bucket privado `galeria`, RLS también en `storage.objects`
+  (migración `20260920120000_galeria.sql`), compresión y miniaturas en el navegador.
+- [ ] Aplicar la migración en el SQL Editor y ejecutar las pruebas del handoff (subida real desde
+      móvil, usuario no admin, ataque directo a la API y a Storage). **Sin aplicar ni probar todavía.**
+- **Repasar antes de producción:** las políticas de `storage.objects` son compartidas por todos
+  los buckets; comprobar que todas están acotadas con `bucket_id = 'galeria'`. Vigilar el consumo
+  (el admin lo ve en `/galeria`): con ~300 KB por foto caben ~3.000 en el plan gratuito de 1 GB.
+
 ### Fase 3 — Proyectos
 - Implementada: tablas `proyectos`, `proyecto_miembros`, `tareas` y `comentarios` con RLS
   (migración `20260920100000_proyectos.sql`), permisos heredados por subproyectos resueltos en
