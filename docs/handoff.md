@@ -35,7 +35,7 @@ mantiene al día al cerrar cada sesión.
 | 2 Almacén | Completada |
 | Sistema de diseño | Implementado (2026-09-19), previo a la Fase 3 |
 | 3 Proyectos | Completada; falta ejercitar en la UI con un usuario no admin (ver Sesión 2026-09-20) |
-| 4 Galería | Código ya publicado en `main`; **migración `20260920120000_galeria.sql` pendiente de aplicar y de probar** (ver Sesión 2026-09-20 (2)). Hasta entonces `/galeria` falla en producción: no existen ni la tabla `fotos` ni el bucket |
+| 4 Galería | Código ya publicado en `main`; migración `20260920120000_galeria.sql` aplicada; **pendientes** aplicar `20260920130000_galeria_vista_invoker.sql` y hacer las pruebas de la Sesión 2026-09-20 (2) |
 | 5 Finanzas: apuntes, devengo, saldos, extracto | Sin empezar. Se desarrolla con datos ficticios (alcance al final de este documento) |
 | 6 Finanzas: importación bancaria | Bloqueada: falta una muestra real de extracto |
 | 7 PWA | Sin empezar |
@@ -49,8 +49,8 @@ mantiene al día al cerrar cada sesión.
 | `20260918090000_almacen.sql` | Aplicada |
 | `20260918100000_almacen_quitar_unidad.sql` | Aplicada |
 | `20260920100000_proyectos.sql` | Aplicada |
-| `20260920120000_galeria.sql` | **Pendiente de aplicar** |
-| `20260920130000_galeria_vista_invoker.sql` | Creada por la sesión de galería, aún sin commitear; corrige `v_uso_galeria` y se aplica después de la anterior |
+| `20260920120000_galeria.sql` | Aplicada (2026-09-20; visibles `fotos` y `v_uso_galeria` en el Table Editor). Faltan las pruebas de la sesión 2026-09-20 (2) |
+| `20260920130000_galeria_vista_invoker.sql` | **Pendiente de aplicar** (una línea: `alter view public.v_uso_galeria set (security_invoker = true);`). Corrige `v_uso_galeria`, que salió `UNRESTRICTED` |
 | `20260920140000_quitar_departamento.sql` | Aplicada (2026-09-20) |
 
 ### Entorno y accesos
@@ -68,8 +68,8 @@ mantiene al día al cerrar cada sesión.
 
 ### Qué toca ahora, por orden
 
-1. **Cerrar Galería** (la lleva otra sesión): aplicar las dos migraciones de galería y hacer las
-   pruebas de la sesión 2026-09-20 (2).
+1. **Cerrar Galería** (la lleva otra sesión): aplicar `20260920130000_galeria_vista_invoker.sql` y
+   hacer las pruebas de la sesión 2026-09-20 (2).
 2. **Probar Proyectos con `miembro1` en la UI** (`ver`, `editar`, sin acceso; ver Sesión 2026-09-20).
 3. **Fase 5, Finanzas (apuntes)**: alcance y resumen operativo al final de este documento.
    Antes de escribir código, leer §4.1 del diseño completo.
