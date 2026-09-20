@@ -1,7 +1,7 @@
 "use client";
 
 import { Camera } from "lucide-react";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ButtonPrimary } from "@/components/ui/buttons";
 import { FormError } from "@/components/ui/field";
 import { comprimirImagen, extension } from "@/lib/comprimir-imagen";
@@ -17,6 +17,14 @@ export function SubirFotos({ album }: { album: Album }) {
   const [progreso, setProgreso] = useState<Progreso | null>(null);
   const [errores, setErrores] = useState<string[]>([]);
   const [subidas, setSubidas] = useState(0);
+
+  // El aviso de éxito es pasajero: si se quedara, seguiría diciendo "1 foto
+  // subida" después de borrar esa misma foto. Los errores sí se quedan.
+  useEffect(() => {
+    if (subidas === 0) return;
+    const temporizador = setTimeout(() => setSubidas(0), 4000);
+    return () => clearTimeout(temporizador);
+  }, [subidas]);
 
   async function subir(archivos: File[]) {
     const supabase = createClient();
