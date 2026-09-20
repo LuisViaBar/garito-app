@@ -14,3 +14,16 @@ export function formatEUR(importe: number): string {
 export function formatCantidad(valor: number): string {
   return cantidad.format(valor);
 }
+
+// Zona horaria fija: el mismo texto en servidor (UTC en Vercel) y navegador,
+// para que la hidratación no discrepe.
+const fechaHora = new Intl.DateTimeFormat("es-ES", {
+  dateStyle: "short",
+  timeStyle: "short",
+  timeZone: "Europe/Madrid",
+});
+
+/** Fecha y hora de un `timestamptz`: `20/9/26, 18:30`. */
+export function formatFechaHora(iso: string): string {
+  return fechaHora.format(new Date(iso));
+}

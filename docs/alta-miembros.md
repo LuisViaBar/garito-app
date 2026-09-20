@@ -24,7 +24,7 @@ where email = 'email@ejemplo.com';
 ```
 
 - `rol`: `'miembro'` para todos salvo tú mismo como `'admin'`.
-- `departamento`: déjalo en `null` por ahora (Fase 7, organigrama).
+- `departamento`: déjalo en `null` por ahora (Fase 5, organigrama).
 - El `select ... from auth.users where email = ...` evita tener que copiar el UUID a mano.
 
 ## Verificación

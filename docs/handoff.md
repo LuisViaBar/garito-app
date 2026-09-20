@@ -14,6 +14,84 @@ hay que saber que no está en ningún otro sitio. Complementa, no repite:
 
 ---
 
+## Sesión 2026-09-20: Fase 3 — Proyectos (completada)
+
+**Cambio de plan:** el documento de diseño §8 se reordenó por petición del propietario. Finanzas
+se aplaza al final porque depende de datos de muestra que aún no han llegado. Nuevo orden:
+3 Proyectos · 4 Galería · 5 Organigrama · 6 Finanzas (apuntes) · 7 Finanzas (importación) · 8 PWA.
+Ya actualizadas las referencias de número de fase en `CLAUDE.md`, `pendientes-produccion.md`,
+`alta-miembros.md` y en el propio diseño (§4.1, §8, §9). El propietario confirmó que el orden
+inicial 6/7 de su edición era un error y se invirtió: apuntes (6) antes que importación (7).
+
+Hecho: migración `20260920100000_proyectos.sql`, listado `/proyectos`, detalle
+`/proyectos/[id]` y subproyecto `/proyectos/[id]/[subId]` con tareas, subproyectos,
+comentarios, gestión de acceso y ajustes (editar/archivar/borrar). `tsc`, `eslint` y
+`next build` pasan. Migración aplicada por el propietario en el SQL Editor (no hay Postgres
+local ni CLI). Validado a 375 px (sin desbordes ni objetivos < 48 px) y en uso real con `miembro1`
+(dueño) y `Vuittest` (admin): crear proyecto, subproyectos, tareas, comentarios y dar acceso.
+Además se atacó la API directamente con la sesión de `miembro1` (no admin) y RLS/GRANT
+rechazaron los 11 intentos: INSERT directo en `proyectos`, cambiar `creador_id` o
+`proyecto_padre_id`, mover una tarea de proyecto, dar acceso en un subproyecto, borrar o rebajar
+la fila del creador, subproyecto de subproyecto, comentar firmando como otro, y `anon` sin acceso
+a tablas ni a `crear_proyecto`.
+
+Decisiones tomadas que el diseño no cerraba (revisables):
+
+1. **Cualquier miembro puede crear proyectos** (será su dueño). Un subproyecto solo puede
+   crearlo quien tenga `editar` en el padre.
+2. **Los permisos viven solo en el proyecto raíz.** Los subproyectos no tienen filas en
+   `proyecto_miembros`: `permiso_proyecto()` resuelve siempre contra la raíz (herencia). La
+   pantalla de un subproyecto muestra el acceso de solo lectura, con aviso.
+3. **Tres niveles de poder:** `ver` (lee todo), `editar` (tareas y comentarios), **dueño**
+   (creador del proyecto o de su raíz) y admin (además: editar nombre/descripción, archivar,
+   borrar, repartir accesos). Función `puede_gestionar_proyecto()`.
+4. **Un miembro con `ver` no comenta**: comentar exige `editar`. Un comentario lo borra su autor
+   o quien gestiona el proyecto; no se editan.
+5. **El creador conserva siempre su fila `editar`** en la raíz: la política impide quitársela o
+   rebajarla.
+6. **Proyectos solo se insertan por `crear_proyecto()`** (RPC `SECURITY DEFINER`, mismo patrón
+   que `actualizar_stock`), no hay política de INSERT. Inserta el proyecto y la fila del creador
+   en una transacción. `UPDATE` con `GRANT` por columnas: `proyecto_padre_id` y `creador_id`
+   son inmutables para el cliente. El límite de 2 niveles está en app, en la RPC y en un trigger.
+7. **Añadidos al modelo cerrado (§5), sin cambiar nombres ni restricciones existentes:**
+   `CHECK` de texto no vacío en `nombre`/`titulo`/`texto` y `DEFAULT` en los estados.
+8. **Archivar no bloquea nada**: un proyecto archivado sigue siendo editable; solo se oculta en
+   un desplegable "Ver archivados" de la lista.
+9. **`tareas.orden` se asigna al crear (al final) pero aún no hay UI para reordenar.** La lista
+   pone las abiertas antes que las hechas. Reordenar queda para cuando se pida.
+10. **Los responsables de tarea se eligen entre quienes tienen acceso al proyecto**; un admin sin
+    fila en `proyecto_miembros` no es asignable salvo que se le dé acceso.
+11. **`AppNav` decide la flecha de volver por la ruta**: `/a/b/c` vuelve a `/a/b`. Por eso el
+    subproyecto está bajo `/proyectos/[id]/[subId]` (la flecha lleva al padre). Un subproyecto
+    abierto por `/proyectos/[subId]` redirige a su dirección canónica.
+
+Piezas nuevas reutilizables: `Textarea` y `FormActions` en `components/ui/` (Almacén migrado a
+`FormActions`), `useAccion` en `src/lib/use-accion.ts`, `formatFechaHora` en `lib/format.ts`
+(zona fija Europe/Madrid para que servidor y navegador coincidan al hidratar).
+
+Gotchas de esta sesión:
+
+- **Con RLS, un `UPDATE`/`DELETE` sin permiso no da error: afecta a 0 filas.** Las acciones de
+  Proyectos encadenan `.select("id")` y tratan "0 filas" como error de permisos; sin eso la UI
+  diría "guardado" sin haber guardado nada. Aplicarlo a toda escritura futura.
+- **No usar `upsert` de PostgREST con `GRANT UPDATE` por columnas**: su `ON CONFLICT DO UPDATE`
+  intenta escribir todas las columnas del payload (incluida la clave) y falla por permisos. Por
+  eso "dar acceso" (INSERT) y "cambiar permiso" (UPDATE) son acciones separadas.
+- **Recursión de RLS entre `proyectos` y `proyecto_miembros`** (cada una consulta a la otra): se
+  evita con funciones `SECURITY DEFINER` (`permiso_proyecto` y compañía), como `es_admin()`.
+- **`supabase.rpc()` sin tipos generados** infiere un array: para una función que devuelve una
+  fila usar `.single<T>()`.
+- Un heredoc de bash con `<<'EOF'` dentro de un comando con rutas `(app)/[id]` falló en esta
+  máquina; para ficheros nuevos usar la herramienta Write.
+
+**Sin probar aún — falta un segundo usuario NO admin.** `Vuittest` es admin y ve/edita todo, así
+que "solo ver" y "sin acceso" no se han podido ejercitar de verdad (solo por lectura de las
+políticas). Al dar de alta otro miembro de prueba con `rol = 'miembro'`, comprobar: con `ver`
+no aparecen los botones de edición y una escritura directa devuelve 403; sin acceso el proyecto
+da 404; `editar` puede tareas y comentarios pero no ve "Ajustes".
+
+---
+
 ## Sesión 2026-09-19: sistema de diseño aplicado a toda la app
 
 Se implementó [garito-sistema-diseno.md](garito-sistema-diseno.md) completo, como pide su §10,
@@ -114,7 +192,7 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
   revisar si `v_stock_bajo` necesita el mismo tratamiento.
 - **Los campos `numeric` de Postgres llegan como `number` de JS**, no como `string`, a
   través de PostgREST/supabase-js (a diferencia de otros drivers de Postgres). No hace
-  falta parsear `cantidad_actual`/`umbral_minimo` a mano. Si en Finanzas (Fase 3) se ve
+  falta parsear `cantidad_actual`/`umbral_minimo` a mano. Si en Finanzas (Fases 6-7) se ve
   algo distinto con importes grandes o muchos decimales, revisar esta asunción antes de
   asumir que es un bug.
 
@@ -132,10 +210,19 @@ al propietario del proyecto — están en el dashboard de Supabase → Project S
 Para previsualizar en el navegador desde Claude Code hay un `.claude/launch.json` con la
 configuración `garito-dev` (npm run dev, puerto 3000).
 
-## Qué toca ahora: Fase 3 — Finanzas (apuntes, devengo, saldos y extracto)
+## Qué toca ahora
 
-Según §8 del diseño, la siguiente fase. **Alcance de la Fase 3, no de la 4**: no incluye
-importación bancaria ni conciliación (eso es la Fase 4, bloqueada además por falta de una
+1. **Fase 3 (Proyectos):** cerrada salvo la prueba con un usuario no admin (ver arriba).
+2. **Fase 4 — Galería** (con compresión en cliente y miniaturas, dos álbumes fijos), luego
+   **Fase 5 — Organigrama**. Leer §4.4/§4.5 y §5 (`fotos`) del diseño. Supabase Storage es nuevo
+   en el proyecto: bucket privado, guardar rutas y no URLs firmadas, RLS también en
+   `storage.objects`.
+3. **Finanzas queda para las Fases 6 (apuntes) y 7 (importación)**, a la espera de la muestra de extracto y de los
+   saldos iniciales (`pendientes-produccion.md`). Nota de alcance, redactada cuando Finanzas era
+   la Fase 3, vigente para cuando se retome:
+
+**Alcance de la Fase 6 (apuntes, devengo, saldos y extracto), no de la 7**: no incluye
+importación bancaria ni conciliación (eso es la Fase 7, bloqueada además por falta de una
 muestra real de extracto — ver `pendientes-produccion.md`). En esta fase los abonos se
 introducen a mano (vía apuntes de tipo `ajuste`, o una pantalla simple de alta manual de
 abono) para poder probar el modelo de saldo con datos ficticios.
@@ -147,7 +234,7 @@ matizada del diseño. Resumen operativo:
   devengo 5 por defecto, editable solo admin), `apuntes` (libro mayor, con todos los
   `CHECK` de signo/periodo del §5 — **inmutables salvo el campo `anulado`**), `operaciones`
   (lotes reversibles: de momento solo tipo `devengo` y `saldo_inicial`; `importacion` se
-  activa en la Fase 4). RLS + GRANT desde el primer paso, como siempre.
+  activa en la Fase 7). RLS + GRANT desde el primer paso, como siempre.
 - Vistas derivadas (nunca guardar el saldo): `v_saldo_miembro`, `v_extracto_miembro` (con
   `SUM() OVER (PARTITION BY miembro_id ORDER BY ...)`). **Ojo con la trampa del §5: el
   saldo suma TODOS los apuntes, incluidos los anulados** — el contraapunte ya compensa al
@@ -158,7 +245,7 @@ matizada del diseño. Resumen operativo:
 - Botón "lanzar devengo del mes" (admin): genera un cargo por cada miembro activo, agrupado
   en una fila de `operaciones` tipo `devengo`. Debe ser idempotente (unicidad parcial sobre
   `(miembro_id, periodo)` ya especificada en §5) y **reversible por lote desde esta misma
-  fase** (guardarraíl 8 de `CLAUDE.md` no es solo para la Fase 4): revertir genera un
+  fase** (el guardarraíl 8 no es solo para la importación): revertir genera un
   contraapunte por cada cargo del lote, marca `anulado = true` y la operación como
   `anulada`, todo en una transacción atómica. Ver §4.1.3 para el procedimiento exacto.
 - Carga de saldos iniciales: **bloqueada para producción** hasta que el propietario del
@@ -167,5 +254,3 @@ matizada del diseño. Resumen operativo:
 - Extracto por miembro: cronológico, con saldo acumulado, apuntes anulados visualmente
   atenuados pero presentes.
 - Validar cada pantalla a 375px antes de darla por buena (guardarraíl 10).
-
-No hace falta tocar Almacén, Proyectos, Galería ni Organigrama en esta fase.

@@ -16,10 +16,10 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
       Bloquea poner **Finanzas** en producción (no su desarrollo, que usa datos ficticios).
 - [ ] Muestra real de un extracto bancario del Garito + decisión sobre el identificador único
       de transacción (referencia propia del banco vs. hash compuesto) — ver §4.1 y §9.
-      Bloquea implementar bien la **Fase 4** (importación bancaria).
+      Bloquea implementar bien la **Fase 7** (importación bancaria).
 - [ ] Nombre exacto del titular bancario de cada miembro, para precargar `alias_bancarios`
       y reducir conciliación manual en los primeros meses reales.
-- [ ] Cargos concretos del organigrama (Fase 7, decorativo, no bloqueante funcional).
+- [ ] Cargos concretos del organigrama (Fase 5, decorativo, no bloqueante funcional).
 
 ## Infraestructura / entorno
 
@@ -73,3 +73,16 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
   denied" como "ningún producto bajo mínimo", y todos los productos aparecían en verde aunque
   no lo estuvieran. Doble lección: el `GRANT` aplica también a vistas, y **toda consulta debe
   comprobar su `error`**, aunque sea de solo lectura, para que un fallo así no quede oculto.
+
+### Fase 3 — Proyectos
+- Implementada: tablas `proyectos`, `proyecto_miembros`, `tareas` y `comentarios` con RLS
+  (migración `20260920100000_proyectos.sql`), permisos heredados por subproyectos resueltos en
+  la base de datos, alta de proyectos solo por la función `crear_proyecto()`.
+- [x] Migración aplicada en el SQL Editor y validada (2026-09-20), incluidos ataques directos a la
+      API con un usuario no admin. Ver handoff.
+- [ ] Probar los niveles `ver` y "sin acceso" con un segundo usuario **no admin** (el único
+      disponible hasta ahora, `Vuittest`, es admin y lo ve todo).
+- **Repasar antes de producción** (ya listado arriba, aquí con lo específico): las políticas de
+  esta fase usan cinco funciones `SECURITY DEFINER` (`proyecto_raiz_id`, `creador_proyecto_id`,
+  `permiso_proyecto`, `puede_gestionar_proyecto`, `crear_proyecto`). Comprobar que ninguna
+  expone más de lo previsto y que `crear_proyecto` no es ejecutable por `anon`.

@@ -2,9 +2,9 @@
 
 import { revalidatePath } from "next/cache";
 import { createClient } from "@/lib/supabase/server";
-import type { Categoria, Motivo } from "@/lib/types";
+import type { AccionState, Categoria, Motivo } from "@/lib/types";
 
-export type AccionState = { error: string | null };
+export type { AccionState };
 
 export type HistorialEntrada = {
   id: string;

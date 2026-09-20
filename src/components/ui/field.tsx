@@ -2,6 +2,7 @@ import type {
   InputHTMLAttributes,
   ReactNode,
   SelectHTMLAttributes,
+  TextareaHTMLAttributes,
 } from "react";
 
 const CONTROL =
@@ -29,6 +30,16 @@ export function Input(props: InputHTMLAttributes<HTMLInputElement>) {
 
 export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
   return <select {...props} className={CONTROL} />;
+}
+
+/** Texto de varias líneas: mismo aspecto que `Input`, altura mínima de 96 px. */
+export function Textarea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  return (
+    <textarea
+      {...props}
+      className="min-h-24 w-full rounded-field border border-line bg-surface px-3 py-3 text-item text-ink placeholder:text-ink-3 disabled:opacity-50"
+    />
+  );
 }
 
 /** Error de validación: rojo = atención. */

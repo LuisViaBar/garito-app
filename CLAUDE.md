@@ -44,9 +44,15 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
   con `AppBar` + `SideDrawer`, Almacén rehecho con ellos. Especificación en
   [docs/garito-sistema-diseno.md](docs/garito-sistema-diseno.md); el acabado visual
   (ilustraciones, microcopy) va al final, en [docs/garito-acabado-visual.md](docs/garito-acabado-visual.md).
-- Fases siguientes en orden: 3 Finanzas (apuntes/devengo/saldos),
-  4 Finanzas (importación bancaria), 5 Proyectos, 6 Galería, 7 Organigrama, 8 PWA.
-  Ver §8 del documento de diseño para el detalle de cada entregable.
+- **Fase 3: Proyectos — completada** (2026-09-20). Migración
+  `supabase/migrations/20260920100000_proyectos.sql` (`proyectos`, `proyecto_miembros`, `tareas`,
+  `comentarios`, RLS con permisos heredados por subproyectos, creación solo por
+  `crear_proyecto()`), listado en `/proyectos` y detalle en `/proyectos/[id]` (subproyectos en
+  `/proyectos/[id]/[subId]`). Migración aplicada a mano en el SQL Editor.
+- **Cambio de orden (2026-09-20):** Finanzas pasa al final porque depende de datos de muestra
+  (extracto bancario, saldos iniciales) que aún no han llegado. Fases siguientes en orden:
+  4 Galería, 5 Organigrama, 6 Finanzas (apuntes/devengo/saldos), 7 Finanzas (importación
+  bancaria), 8 PWA. Ver §8 del documento de diseño para el detalle de cada entregable.
 
 ## Reglas de proceso (resumen — el detalle está en §7 del documento de diseño)
 
@@ -98,6 +104,6 @@ en detalle. Se actualiza al cerrar cada sesión de trabajo.
 
 - Saldos iniciales de los 25 miembros (bloquea poner Finanzas en producción, no su desarrollo).
 - Muestra real de extracto bancario y decisión sobre el identificador único de transacción
-  (bloquea la fase 4, importación bancaria).
+  (bloquea la fase 7, importación bancaria).
 
 Ver §9 del documento de diseño para el listado completo.

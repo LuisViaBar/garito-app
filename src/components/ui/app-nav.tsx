@@ -8,6 +8,7 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useCallback, useRef, useState } from "react";
 import { AppBar } from "./app-bar";
 import { SideDrawer, type NavItem } from "./side-drawer";
@@ -22,7 +23,12 @@ const SECCIONES: readonly NavItem[] = [
   { href: "/galeria", label: "Galería", icon: ImageIcon },
 ];
 
-/** Barra superior + menú lateral: la navegación de toda la app. */
+/**
+ * Barra superior + menú lateral: la navegación de toda la app. En una pantalla
+ * de detalle (`/seccion/algo`) la hamburguesa se sustituye por la flecha de
+ * volver a la pantalla de nivel superior, que es la misma ruta sin el último
+ * segmento (sistema de diseño §8).
+ */
 export function AppNav({
   usuario,
   onSalir,
@@ -31,6 +37,7 @@ export function AppNav({
   onSalir: () => void | Promise<void>;
 }) {
   const [abierto, setAbierto] = useState(false);
+  const segmentos = usePathname().split("/").filter(Boolean);
   const hamburguesa = useRef<HTMLButtonElement>(null);
 
   const cerrar = useCallback(() => {
@@ -40,7 +47,13 @@ export function AppNav({
 
   return (
     <>
-      <AppBar ref={hamburguesa} onMenu={() => setAbierto(true)} />
+      <AppBar
+        ref={hamburguesa}
+        onMenu={() => setAbierto(true)}
+        backHref={
+          segmentos.length > 1 ? `/${segmentos.slice(0, -1).join("/")}` : undefined
+        }
+      />
       <SideDrawer
         open={abierto}
         onClose={cerrar}

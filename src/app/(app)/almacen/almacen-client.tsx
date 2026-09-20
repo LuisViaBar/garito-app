@@ -12,6 +12,7 @@ import { ConfirmSheet } from "@/components/ui/bottom-sheet";
 import { ButtonPrimary, ButtonSecondary } from "@/components/ui/buttons";
 import { EmptyState } from "@/components/ui/empty-state";
 import { Field, FormError, Input, Select } from "@/components/ui/field";
+import { FormActions } from "@/components/ui/form-actions";
 import { CardList, ListCard } from "@/components/ui/list-card";
 import { SummaryPill } from "@/components/ui/summary-pill";
 import { formatCantidad } from "@/lib/format";
@@ -248,27 +249,6 @@ function useEnvioConfirmado(formAction: (datos: FormData) => void) {
   };
 }
 
-function AccionesFormulario({
-  pending,
-  enviar,
-  enviando,
-  onCancel,
-}: {
-  pending: boolean;
-  enviar: string;
-  enviando: string;
-  onCancel: () => void;
-}) {
-  return (
-    <div className="flex items-center justify-between gap-2">
-      <ButtonSecondary onClick={onCancel}>Cancelar</ButtonSecondary>
-      <ButtonPrimary type="submit" disabled={pending}>
-        {pending ? enviando : enviar}
-      </ButtonPrimary>
-    </div>
-  );
-}
-
 function EditarCantidadForm({
   producto,
   onDone,
@@ -323,7 +303,7 @@ function EditarCantidadForm({
 
       <FormError>{state.error}</FormError>
 
-      <AccionesFormulario
+      <FormActions
         pending={pending}
         enviar="Guardar"
         enviando="Guardando…"
@@ -416,7 +396,7 @@ function EditarProductoForm({
 
         <FormError>{state.error}</FormError>
 
-        <AccionesFormulario
+        <FormActions
           pending={pending}
           enviar="Guardar cambios"
           enviando="Guardando…"
@@ -561,7 +541,7 @@ function NuevoProductoForm({
 
         <FormError>{state.error}</FormError>
 
-        <AccionesFormulario
+        <FormActions
           pending={pending}
           enviar="Crear producto"
           enviando="Creando…"
