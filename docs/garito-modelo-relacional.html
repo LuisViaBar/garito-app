@@ -256,7 +256,7 @@ footer p{max-width:66ch;margin:0 0 10px}
     <!-- apuntes.anula_apunte_id -> apuntes (autorreferencia) -->
     <path d="M 1000 1010 L 1036 1010 L 1036 966 L 1004 966"/>
     <!-- stock_log.producto_id -> productos -->
-    <path d="M 1320 380 L 1320 334"/>
+    <path d="M 1320 380 L 1320 308"/>
     <!-- proyecto_miembros.proyecto_id -> proyectos -->
     <path d="M 1840 350 L 1840 308"/>
     <!-- tareas.proyecto_id -> proyectos -->
@@ -377,7 +377,6 @@ footer p{max-width:66ch;margin:0 0 10px}
     <div class="row"><span class="fname is-pk">id</span><span class="fdef"><code>uuid</code> · clave primaria</span></div>
     <div class="row"><span class="fname">nombre</span><span class="fdef"><code>text</code> NOT NULL</span></div>
     <div class="row"><span class="fname">categoria</span><span class="fdef">CHECK <code>bebida | comida | desechables | limpieza | otros</code></span></div>
-    <div class="row"><span class="fname">unidad</span><span class="fdef"><code>text</code> · <em>unidad, litro, kg…</em></span></div>
     <div class="row"><span class="fname">cantidad_actual</span><span class="fdef"><code>numeric(10,2)</code> · <em>fuente de verdad</em></span></div>
     <div class="row"><span class="fname">umbral_minimo</span><span class="fdef"><code>numeric(10,2)</code> DEFAULT 0</span></div>
     <div class="row"><span class="fname">orden</span><span class="fdef"><code>smallint</code> · <em>orden de listado</em></span></div>
