@@ -11,6 +11,83 @@ hay que saber que no está en ningún otro sitio. Complementa, no repite:
 - [pendientes-produccion.md](pendientes-produccion.md) — lista viva de bloqueantes para el
   paso a producción (no confundir con "qué toca programar ahora", que es este documento).
 - [alta-miembros.md](alta-miembros.md) — runbook operativo para dar de alta a un miembro.
+- [garito-sistema-diseno.md](garito-sistema-diseno.md) — sistema de diseño (tokens, componentes,
+  navegación); el catálogo de componentes vive en `src/components/ui/README.md`.
+- [garito-acabado-visual.md](garito-acabado-visual.md) — ilustraciones, iconos y microcopy;
+  va al final del proyecto, no antes.
+- [garito-modelo-relacional.html](garito-modelo-relacional.html) — diagrama del modelo de datos.
+- [garitApp-manual-tesorero.md](garitApp-manual-tesorero.md) — manual de uso de Finanzas.
+
+---
+
+## Estado actual (léelo primero)
+
+Última actualización: 2026-09-20. Las sesiones de más abajo, en orden cronológico inverso,
+guardan el detalle y las decisiones de cada fase. **Esta sección es la foto actual** y se
+mantiene al día al cerrar cada sesión.
+
+### Fases
+
+| Fase | Estado |
+|---|---|
+| 0 Base (Next.js, Tailwind, Supabase, Vercel) | Completada |
+| 1 Auth, tabla `miembros`, roles, layout | Completada |
+| 2 Almacén | Completada |
+| Sistema de diseño | Implementado (2026-09-19), previo a la Fase 3 |
+| 3 Proyectos | Completada; falta ejercitar en la UI con un usuario no admin (ver Sesión 2026-09-20) |
+| 4 Galería | Código ya publicado en `main`; **migración `20260920120000_galeria.sql` pendiente de aplicar y de probar** (ver Sesión 2026-09-20 (2)). Hasta entonces `/galeria` falla en producción: no existen ni la tabla `fotos` ni el bucket |
+| 5 Finanzas: apuntes, devengo, saldos, extracto | Sin empezar. Se desarrolla con datos ficticios (alcance al final de este documento) |
+| 6 Finanzas: importación bancaria | Bloqueada: falta una muestra real de extracto |
+| 7 PWA | Sin empezar |
+| Organigrama | **Fuera del alcance** (2026-09-20): sin menú, sin ruta y sin `miembros.departamento` |
+
+### Migraciones (`supabase/migrations/`; no hay CLI, se aplican a mano en el SQL Editor)
+
+| Migración | Estado |
+|---|---|
+| `20260917120000_miembros.sql` | Aplicada |
+| `20260918090000_almacen.sql` | Aplicada |
+| `20260918100000_almacen_quitar_unidad.sql` | Aplicada |
+| `20260920100000_proyectos.sql` | Aplicada |
+| `20260920120000_galeria.sql` | **Pendiente de aplicar** |
+| `20260920130000_galeria_vista_invoker.sql` | Creada por la sesión de galería, aún sin commitear; corrige `v_uso_galeria` y se aplica después de la anterior |
+| `20260920140000_quitar_departamento.sql` | Aplicada (2026-09-20) |
+
+### Entorno y accesos
+
+- Repo [github.com/LuisViaBar/garito-app](https://github.com/LuisViaBar/garito-app), rama `main`
+  única. Cada push a `main` despliega solo en [garito-app.vercel.app](https://garito-app.vercel.app).
+- Todo el entorno es aún de pruebas (datos ficticios, ~5 usuarios), aunque Vercel lo llame
+  "Production". Un solo proyecto Supabase (`aagltznsialwvwcnlunr`). Antes de invitar a los 25
+  reales hay decisiones pendientes (mismo o distinto proyecto Supabase, ramas y Preview): ver
+  [pendientes-produccion.md](pendientes-produccion.md).
+- No hay `gh`, `vercel` ni CLI de Supabase: todo por sus dashboards.
+- Usuarios de prueba: `Vuittest` (admin, `luisviabar+pruebagaritapp@gmail.com`) y `miembro1`
+  (rol `miembro`). Las contraseñas no están en el repo: pídelas al propietario. Para dar de alta
+  más, [alta-miembros.md](alta-miembros.md).
+
+### Qué toca ahora, por orden
+
+1. **Cerrar Galería** (la lleva otra sesión): aplicar las dos migraciones de galería y hacer las
+   pruebas de la sesión 2026-09-20 (2).
+2. **Probar Proyectos con `miembro1` en la UI** (`ver`, `editar`, sin acceso; ver Sesión 2026-09-20).
+3. **Fase 5, Finanzas (apuntes)**: alcance y resumen operativo al final de este documento.
+   Antes de escribir código, leer §4.1 del diseño completo.
+4. **Fase 6 (importación) y producción**, cuando el propietario aporte los saldos iniciales y la
+   muestra de extracto (`pendientes-produccion.md`). **Fase 7 (PWA)** y el acabado visual, al final.
+
+### Cómo trabajar cuando hay varias sesiones sobre la misma carpeta
+
+- Ha habido más de una sesión de Claude Code sobre el mismo árbol de trabajo. Antes de commitear:
+  `git status` y `git diff`; stagear ficheros o hunks concretos, nunca `git add -A`.
+- **`git push` publica todos los commits locales, también los de otra sesión.** El 2026-09-20 el
+  push del Organigrama subió sin querer el commit de galería que estaba sin publicar. Mirar
+  `git log origin/main..HEAD` antes de empujar.
+- **Lo que hay en `docs/` del repo es la versión canónica.** Si el propietario trae copias editadas
+  desde fuera (OneDrive), compararlas con `git diff` antes de commitear: la del 2026-09-20 era
+  anterior a varias decisiones y las revertía (`unidad` en `productos`, fondo gris, `actualizar_stock`).
+  Se aplicó solo lo pedido y el resto se descartó.
+- Una migración cuenta como hecha cuando el propietario confirma que la aplicó. Anotarlo aquí.
 
 ---
 
@@ -46,7 +123,7 @@ Decisiones tomadas que el diseño no cerraba (revisables):
    inserta la fila. Un server action tiene tope de 1 MB por petición, y así los ficheros no pasan
    por Vercel. Si el registro falla, el cliente borra los ficheros que acaba de subir.
 2. **Bucket `galeria`, rutas `<album>/<uuid>.webp` y `<album>/<uuid>_mini.webp`** (`.jpg` en los
-   Safari que no codifican WebP). El §4.5 escribe `galeria/grupo/abc123.webp` sin aclarar si
+   Safari que no codifican WebP). El §4.4 escribe `galeria/grupo/abc123.webp` sin aclarar si
    `galeria` es el bucket o una carpeta; se interpretó como bucket. Un `CHECK` obliga a que las
    rutas cuelguen de la carpeta de su álbum.
 3. **`tamano_bytes` = foto + miniatura**, es decir, lo que la fila ocupa de verdad en Storage.
@@ -65,6 +142,11 @@ Decisiones tomadas que el diseño no cerraba (revisables):
 
 Gotchas de esta sesión:
 
+- **Toda vista nueva lleva `with (security_invoker = true)`** (como `v_stock_bajo`). Sin ello corre
+  con los privilegios de su dueño, se salta el RLS y Supabase la marca `UNRESTRICTED`.
+  `v_uso_galeria` salió sin ello y se corrigió con `20260920130000_galeria_vista_invoker.sql`.
+- **En el Table Editor de Supabase `v_uso_galeria` siempre sale a 0**: el panel consulta como
+  `postgres`, donde `es_admin()` es falso. Para verla de verdad hay que consultarla desde la app.
 - **Storage tampoco da error cuando una política impide borrar**: `remove()` devuelve menos
   objetos de los pedidos. Por eso `eliminarFoto` compara cuántos se borraron.
 - **Safari que no codifica WebP devuelve un PNG en silencio** en `canvas.toBlob('image/webp')`
@@ -84,7 +166,8 @@ se aplaza al final porque depende de datos de muestra que aún no han llegado. N
 Organigrama, que era la 5, se sacó del alcance el mismo día y las siguientes se renumeraron.)
 Ya actualizadas las referencias de número de fase en `CLAUDE.md`, `pendientes-produccion.md`,
 `alta-miembros.md` y en el propio diseño (§4.1, §8, §9). El propietario confirmó que el orden
-inicial 6/7 de su edición era un error y se invirtió: apuntes (6) antes que importación (7).
+inicial de su edición tenía apuntes e importación al revés y se corrigió: apuntes (5) antes que
+importación (6), con la numeración ya sin Organigrama.
 
 Hecho: migración `20260920100000_proyectos.sql`, listado `/proyectos`, detalle
 `/proyectos/[id]` y subproyecto `/proyectos/[id]/[subId]` con tareas, subproyectos,
@@ -199,7 +282,7 @@ Gotchas de esta sesión:
   usar `requestSubmit()` + ref.
 - `<dialog>` nativo: la tecla Escape *sintética* (herramientas de test) no lo cierra; la real sí.
 
-## Sesión anterior (2026-09-18)
+## Sesión 2026-09-18: Fase 2 — Almacén (completada)
 
 Se completó y validó en local (con el usuario de prueba y un segundo usuario `miembro`
 creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
@@ -207,7 +290,7 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
 - Migraciones nuevas en `supabase/migrations/`: `20260918090000_almacen.sql` (tablas
   `productos`/`stock_log`, RLS, función `actualizar_stock()`, vista `v_stock_bajo`),
   `20260918100000_almacen_quitar_unidad.sql` (quita la columna `unidad`, recrea la vista
-  con su `GRANT`). Las tres ya están aplicadas a mano en el SQL Editor de Supabase por el
+  con su `GRANT`). Ambas ya están aplicadas a mano en el SQL Editor de Supabase por el
   propietario del proyecto (seguimos sin CLI de Supabase en este entorno).
 - Pantalla `/almacen` funcionando de punta a punta: listado con indicador verde/rojo,
   resumen "N productos bajo mínimos" con esos productos subidos arriba de la lista,
@@ -219,10 +302,10 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
   `rol = 'miembro'` creado ex profeso para verificar que no ve los controles de admin y
   que sí puede editar cantidad. Validado a 375px.
 
-## Decisiones tomadas esta sesión (no estaban en el diseño original)
+### Decisiones de la sesión 2026-09-18 (no estaban en el diseño original)
 
 1. **Se descarta el campo `unidad` de `productos`.** Estaba en el modelo de datos
-   original (§5) pero se decidió en esta sesión que no aportaba valor suficiente.
+   original (§5) pero se decidió en esa sesión que no aportaba valor suficiente.
    Ya actualizado en `garito-diseno-funcional-tecnico.md` §4.2 y §5.
 2. **Aviso de posible duplicado por mayúsculas/plural**, no exigido por el diseño
    original: al crear o renombrar un producto se normaliza el nombre (minúsculas, sin
@@ -237,7 +320,7 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
    RLS de `UPDATE` de `productos` es solo-admin (cubre nombre/categoría/umbral/orden); la
    función es el único camino para que un miembro no-admin cambie la cantidad.
 
-## Gotchas técnicos descubiertos esta sesión (para no repetirlos)
+### Gotchas de la sesión 2026-09-18 (para no repetirlos)
 
 - **El `GRANT` explícito también hace falta en las vistas, no solo en las tablas.**
   Repetición del gotcha de la Fase 1: `v_stock_bajo` se creó sin
@@ -259,6 +342,40 @@ creado para probar permisos) la **Fase 2 — Almacén**. Resumen ejecutivo:
   algo distinto con importes grandes o muchos decimales, revisar esta asunción antes de
   asumir que es un bug.
 
+## Sesión 2026-09-17: Fases 0 y 1 (completadas)
+
+Hecho: proyecto Next.js (App Router, TypeScript estricto) + Tailwind en GitHub y Vercel, cliente
+Supabase con `@supabase/ssr`, login por email y contraseña con server actions,
+`src/proxy.ts` que protege todas las rutas salvo `/login`, tabla `miembros` con RLS
+(`20260917120000_miembros.sql`) y layout con navegación. Verificado en local y en producción.
+
+Decisiones que el diseño no cerraba (no hace falta volver a preguntarlas):
+
+1. **Login con email y contraseña**, no magic link. El admin crea cada usuario en el dashboard de
+   Supabase (Authentication → Users → Add user, con "Auto Confirm User") y pasa la contraseña
+   provisional por otro canal.
+2. **Alta de miembros manual por el panel de Supabase**, sin pantalla de invitación en la app
+   ([alta-miembros.md](alta-miembros.md)). Con 25 personas fijas no se justifica más.
+3. **Un solo proyecto Supabase y una sola rama (`main`)** por ahora, sin separar Preview y
+   Production. Se reconsidera antes de invitar a los 25 (`pendientes-produccion.md`).
+4. **Variables de entorno de Vercel en "All Environments"**, para que ningún despliegue reviente
+   por variables que solo estaban en un scope.
+
+Gotchas:
+
+- **Toda tabla nueva necesita `GRANT` explícito además de RLS**: crearla por SQL Editor no
+  concede privilegios a `authenticated` y Postgres da "permission denied" antes de evaluar las
+  políticas. Reglas completas en `CLAUDE.md` (regla 2).
+- **El middleware va en `src/proxy.ts`** (el proyecto usa `src/`) y, en Next.js 16, la función
+  exportada se llama `proxy`, no `middleware`. El helper de sesión está en
+  `src/lib/supabase/middleware.ts`.
+- **Cambiar variables de entorno en Vercel no reconstruye** los despliegues existentes: hace falta
+  un "Redeploy". Un 500 en producción con el mismo código que funciona en local es casi siempre eso.
+- Cambios de layout: validar siempre a 375 px. La primera cabecera con pestañas desbordaba y dejaba
+  fuera el alias y "Salir"; de ahí salió la barra superior actual.
+
+---
+
 ## Cómo levantar el entorno local
 
 ```bash
@@ -273,18 +390,11 @@ al propietario del proyecto — están en el dashboard de Supabase → Project S
 Para previsualizar en el navegador desde Claude Code hay un `.claude/launch.json` con la
 configuración `garito-dev` (npm run dev, puerto 3000).
 
-## Qué toca ahora
+## Fase 5 — Finanzas (apuntes): alcance y resumen operativo
 
-1. **Fase 3 (Proyectos):** cerrada salvo la prueba con un usuario no admin (ver arriba).
-2. **Fase 4 — Galería:** código listo; falta aplicar la migración y las pruebas de la sesión
-   2026-09-20 (2), arriba. Después de Galería solo queda Finanzas.
-3. **Finanzas queda para las Fases 5 (apuntes) y 6 (importación)**, a la espera de la muestra de extracto y de los
-   saldos iniciales (`pendientes-produccion.md`). Nota de alcance, redactada cuando Finanzas era
-0. **Organigrama eliminado del alcance (2026-09-20).** Se quitó la entrada del menú, la ruta
-   `/organigrama` y `miembros.departamento` en código. La migración
-   `supabase/migrations/20260920140000_quitar_departamento.sql` ya está aplicada a mano en el
-   SQL Editor (2026-09-20). El `insert` de `alta-miembros.md` ya no lleva `departamento`.
-   la Fase 3, vigente para cuando se retome:
+Finanzas se aplazó al final porque depende de datos de muestra que aún no han llegado (extracto
+bancario y saldos iniciales, ver `pendientes-produccion.md`). La nota de alcance se redactó
+cuando Finanzas era la Fase 3 y sigue vigente.
 
 **Alcance de la Fase 5 (apuntes, devengo, saldos y extracto), no de la 6**: no incluye
 importación bancaria ni conciliación (eso es la Fase 6, bloqueada además por falta de una
@@ -319,3 +429,8 @@ matizada del diseño. Resumen operativo:
 - Extracto por miembro: cronológico, con saldo acumulado, apuntes anulados visualmente
   atenuados pero presentes.
 - Validar cada pantalla a 375px antes de darla por buena (guardarraíl 10).
+- Lecciones de fases anteriores que aplican aquí: toda vista lleva `with (security_invoker = true)`
+  y su `GRANT`; toda consulta de lectura comprueba su `error`; toda escritura encadena
+  `.select("id")` y trata "0 filas" como error de permisos; las operaciones que tocan varias
+  tablas van en una función `SECURITY DEFINER` (patrón `actualizar_stock()` y `crear_proyecto()`).
+  Importes: se formatean con `Intl` es-ES / EUR y `tabular-nums` (reglas de diseño de `CLAUDE.md`).
