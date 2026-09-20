@@ -35,7 +35,7 @@ mantiene al día al cerrar cada sesión.
 | 2 Almacén | Completada |
 | Sistema de diseño | Implementado (2026-09-19), previo a la Fase 3 |
 | 3 Proyectos | Completada; falta ejercitar en la UI con un usuario no admin (ver Sesión 2026-09-20) |
-| 4 Galería | Código ya publicado en `main`; migraciones `20260920120000_galeria.sql` y `20260920130000_galeria_vista_invoker.sql` aplicadas; **pendientes** las pruebas de la Sesión 2026-09-20 (2) |
+| 4 Galería | Código publicado, migraciones aplicadas y probadas con `miembro1`. **Pendiente**: pruebas con `Vuittest` (admin) y con un móvil real; ver "Resultado de las pruebas" en la Sesión 2026-09-20 (2) |
 | 5 Finanzas: apuntes, devengo, saldos, extracto | Sin empezar. Se desarrolla con datos ficticios (alcance al final de este documento) |
 | 6 Finanzas: importación bancaria | Bloqueada: falta una muestra real de extracto |
 | 7 PWA | Sin empezar |
@@ -49,7 +49,7 @@ mantiene al día al cerrar cada sesión.
 | `20260918090000_almacen.sql` | Aplicada |
 | `20260918100000_almacen_quitar_unidad.sql` | Aplicada |
 | `20260920100000_proyectos.sql` | Aplicada |
-| `20260920120000_galeria.sql` | Aplicada (2026-09-20; visibles `fotos` y `v_uso_galeria` en el Table Editor). Faltan las pruebas de la sesión 2026-09-20 (2) |
+| `20260920120000_galeria.sql` | Aplicada (2026-09-20; visibles `fotos` y `v_uso_galeria` en el Table Editor). Probada con `miembro1` |
 | `20260920130000_galeria_vista_invoker.sql` | Aplicada (2026-09-20). Corrige `v_uso_galeria`, que salió `UNRESTRICTED` |
 | `20260920140000_quitar_departamento.sql` | Aplicada (2026-09-20) |
 
@@ -68,8 +68,9 @@ mantiene al día al cerrar cada sesión.
 
 ### Qué toca ahora, por orden
 
-1. **Cerrar Galería** (la lleva otra sesión): hacer las pruebas de la sesión 2026-09-20 (2)
-   (subida real desde móvil, usuario no admin, ataque directo a la API y a Storage).
+1. **Cerrar Galería** (la lleva otra sesión): quedan las pruebas con `Vuittest` (admin borra la foto de
+   otro, ve el espacio usado) y con un móvil real; lista exacta en "Resultado de las pruebas", Sesión
+   2026-09-20 (2).
 2. **Probar Proyectos con `miembro1` en la UI** (`ver`, `editar`, sin acceso; ver Sesión 2026-09-20).
 3. **Fase 5, Finanzas (apuntes)**: alcance y resumen operativo al final de este documento.
    Antes de escribir código, leer §4.1 del diseño completo.
@@ -96,8 +97,8 @@ mantiene al día al cerrar cada sesión.
 Hecho: migración `20260920120000_galeria.sql`, `/galeria` (lista de los dos álbumes con su
 contador; el admin ve además el espacio usado frente a 1 GB) y `/galeria/[album]` (rejilla de
 3 columnas, visor a pantalla completa con anterior/siguiente y borrado, subida múltiple con
-progreso). `tsc` y `eslint` pasan. **No se ha aplicado la migración ni se ha probado contra
-Supabase**: en el navegador se validó a 375 px la pantalla vacía, la rejilla y el visor con datos
+progreso). `tsc` y `eslint` pasan. Migraciones aplicadas y probadas contra Supabase con `miembro1`
+(ver "Resultado de las pruebas" más abajo). Antes de aplicarlas, en el navegador se validó a 375 px la pantalla vacía, la rejilla y el visor con datos
 falsos (página temporal ya borrada), y la compresión con el código real (foto sintética de
 4032×3024 y 5,7 MB → 1600×1200 WebP de 268 KB + miniatura de 480 px y 26 KB; una imagen
 pequeña no se amplía; un fichero corrupto se rechaza).
@@ -116,6 +117,38 @@ pequeña no se amplía; un fichero corrupto se rechaza).
    ajena debe afectar a 0 filas, `insert` con `subida_por` de otro debe dar 403, y subir a una
    carpeta que no sea un álbum debe rechazarse.
 4. Con el admin: `/galeria` muestra "Espacio de la galería"; con un no admin no aparece.
+
+**Resultado de las pruebas (2026-09-20, sesión de `miembro1`, no admin, desde el navegador de la app):**
+
+- **Subida de extremo a extremo por el componente real** (foto sintética de 4032×3024): 1600×1200 WebP
+  de 148 KB + miniatura 480×360 de 25 KB; `tamano_bytes` = 176.768 (suma de ambas); fila con
+  `subida_por` = `miembro1`; la miniatura carga en la rejilla y la foto en el visor.
+- **Borrado desde la UI**: desaparecen la fila y los dos ficheros del bucket; el visor se cierra y
+  sale el estado vacío. La política de `storage.objects` por `owner_id` funciona (el dueño borra
+  su fichero).
+- **Rechazados como debían** (403/400 según el caso): `insert` firmando como otro miembro; álbum
+  inexistente; ruta de un álbum en otro; `tamano_bytes = 0`; ruta duplicada; `update` de cualquier
+  columna (no hay GRANT); `anon` sobre `fotos` y sobre `v_uso_galeria`; en Storage, subir fuera de
+  `grupo/` y `merchandising/` (también a la raíz), PNG y `text/plain` (415), 2,5 MB (413), sobrescribir
+  con `upsert`, mover un objeto a otra carpeta, y todo acceso `anon` (listar, firmar, URL pública
+  de un bucket privado, descarga sin token). Sin residuos tras la batería.
+- `v_uso_galeria` devuelve 0/0 a un no admin aunque haya fotos.
+- **Sin probar todavía** (falta una foto ajena y la sesión de `Vuittest`): que un no admin no pueda
+  borrar la foto de otro (el `delete` sobre ajenas se probó, pero sin filas ajenas que perder), que
+  el admin sí pueda borrar la de otro, que el admin vea "Espacio de la galería" con cifras reales, y
+  el álbum Merchandising con datos. Tampoco se ha probado con un móvil real (orientación EXIF,
+  WebP en Safari/iPhone).
+
+**Limitaciones asumidas (no son bugs, revisables):**
+
+- Storage valida el tipo por la cabecera `Content-Type`, **no inspecciona el contenido**: un miembro
+  autenticado puede subir bytes basura declarados como `image/webp` (≤ 2 MB) a un álbum. No se
+  muestran en la app (sin fila en `fotos` no hay quien los enseñe) y su dueño puede borrarlos.
+- Un fichero subido sin registrar su fila (p. ej. se corta la conexión entre los dos pasos) queda
+  huérfano: ocupa cuota y **no cuenta en `v_uso_galeria`**, que suma `fotos.tamano_bytes`. El cliente
+  intenta limpiarlo, pero si el navegador se cierra a mitad no hay barrido. Con 25 miembros de
+  confianza se asume; si el consumo real de Storage en el panel se aleja del de la app, sospechar
+  de esto.
 
 Decisiones tomadas que el diseño no cerraba (revisables):
 

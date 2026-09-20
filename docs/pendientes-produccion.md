@@ -76,8 +76,12 @@ producción es un evento explícito y posterior, no algo que ocurra fase a fase.
 ### Fase 4 — Galería
 - Implementada: tabla `fotos`, bucket privado `galeria`, RLS también en `storage.objects`
   (migración `20260920120000_galeria.sql`), compresión y miniaturas en el navegador.
-- [ ] Aplicar la migración en el SQL Editor y ejecutar las pruebas del handoff (subida real desde
-      móvil, usuario no admin, ataque directo a la API y a Storage). **Sin aplicar ni probar todavía.**
+- [x] Migraciones aplicadas y probadas con un usuario no admin, incluido ataque directo a la API y a
+      Storage (2026-09-20). Ver handoff.
+- [ ] Pruebas con el admin (borrar la foto de otro, ver el espacio usado) y con un móvil real
+      (orientación EXIF, WebP en iPhone/Safari).
+- Limitación asumida: Storage no inspecciona el contenido (solo la cabecera `Content-Type`) y un
+  fichero subido sin su fila queda huérfano y fuera de `v_uso_galeria`; ver handoff.
 - **Repasar antes de producción:** las políticas de `storage.objects` son compartidas por todos
   los buckets; comprobar que todas están acotadas con `bucket_id = 'galeria'`. Vigilar el consumo
   (el admin lo ve en `/galeria`): con ~300 KB por foto caben ~3.000 en el plan gratuito de 1 GB.
